@@ -8,68 +8,115 @@
 <style>
 body {
   margin: 0;
-  font-family: Arial;
+  font-family: 'Segoe UI', sans-serif;
   background: radial-gradient(circle at top, #0f172a, #020617);
   color: white;
 }
 
 .container {
-  max-width: 700px;
+  max-width: 750px;
   margin: auto;
-  padding: 60px 20px;
+  padding: 50px 20px;
   text-align: center;
 }
 
+/* CARD */
 .card {
-  background: rgba(255,255,255,0.05);
-  backdrop-filter: blur(12px);
-  padding: 25px;
+  background: rgba(255,255,255,0.04);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255,255,255,0.08);
+  padding: 30px;
   margin-top: 25px;
-  border-radius: 16px;
+  border-radius: 20px;
+  box-shadow: 0 0 40px rgba(79,124,255,0.1);
 }
 
+/* BUTTONS */
+button {
+  padding: 14px 22px;
+  margin: 10px;
+  border-radius: 12px;
+  border: none;
+  cursor: pointer;
+  font-weight: bold;
+  transition: 0.2s;
+}
+
+button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 0 20px rgba(255,255,255,0.15);
+}
+
+.start {
+  background: linear-gradient(135deg,#4f7cff,#7c3aed);
+  color: white;
+}
+
+.good {
+  background: linear-gradient(135deg,#22c55e,#16a34a);
+}
+
+.bad {
+  background: linear-gradient(135deg,#ef4444,#dc2626);
+}
+
+/* CHECKLIST */
+.checklist label {
+  display: block;
+  background: rgba(255,255,255,0.05);
+  padding: 12px;
+  margin: 8px 0;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.checklist input {
+  margin-right: 8px;
+}
+
+.checklist label:hover {
+  background: rgba(255,255,255,0.1);
+}
+
+/* INPUTS */
 input {
   padding: 10px;
-  margin: 8px;
+  margin: 10px;
   width: 120px;
   border-radius: 10px;
   border: none;
   background: #020617;
   color: white;
+  text-align: center;
 }
 
-button {
-  padding: 12px 20px;
-  margin: 10px;
-  border-radius: 10px;
-  border: none;
-  cursor: pointer;
-}
-
-.start { background: linear-gradient(135deg,#4f7cff,#7c3aed); }
-.good { background: #16a34a; }
-.bad { background: #dc2626; }
-
+/* STATS */
 .stats {
   display: flex;
-  justify-content: space-around;
+  justify-content: space-between;
 }
 
 .stat {
-  background: #020617;
+  background: rgba(0,0,0,0.4);
   padding: 15px;
-  border-radius: 10px;
+  border-radius: 12px;
   width: 30%;
+  font-size: 14px;
 }
 
 .locked {
-  color: red;
+  color: #ff4d4d;
   font-size: 20px;
+  margin-top: 10px;
 }
 
+/* HISTORY */
 .history {
   margin-top: 20px;
   text-align: left;
+  font-size: 13px;
+  opacity: 0.8;
 }
 </style>
 </head>
@@ -79,18 +126,18 @@ button {
 <div class="container">
 
 <h1>TradeTrack</h1>
-<p style="opacity:0.6;">
-Build discipline. Eliminate overtrading. Track real performance.
-</p>
+<p style="opacity:0.6;">Build discipline. Eliminate overtrading.</p>
 
-<!-- SETUP -->
 <div class="card" id="setup">
-<h3>Start Session</h3>
 
-<label><input type="checkbox" id="c1"> Clear setup</label><br>
-<label><input type="checkbox" id="c2"> Risk defined</label><br>
-<label><input type="checkbox" id="c3"> No revenge</label><br>
-<label><input type="checkbox" id="c4"> Follow system</label><br>
+<h3>Pre-Trade Checklist</h3>
+
+<div class="checklist">
+<label><input type="checkbox" id="c1"> Clear setup confirmed</label>
+<label><input type="checkbox" id="c2"> Risk defined</label>
+<label><input type="checkbox" id="c3"> No revenge trading</label>
+<label><input type="checkbox" id="c4"> Following system rules</label>
+</div>
 
 <p>Max Trades</p>
 <input id="maxTrades" type="number" value="3">
@@ -99,27 +146,25 @@ Build discipline. Eliminate overtrading. Track real performance.
 <input id="maxBreaks" type="number" value="2">
 
 <br>
+
 <button class="start" onclick="startSession()">Start Session</button>
 
 <p>🔥 Streak: <span id="streak">0</span></p>
 
-<!-- STRIPE -->
 <a href="https://buy.stripe.com/9B628r8q61Zr0geerN6Na00" target="_blank">
-  <button class="start">Upgrade to TradeTrack Pro — £15/month</button>
+  <button class="start">Upgrade — £15/month</button>
 </a>
 
-<p style="opacity:0.7; font-size:14px;">
-Start with 5 free sessions. Upgrade for unlimited access, full history, and streak tracking.
+<p style="opacity:0.6;font-size:14px;">
+5 free sessions → then unlimited access
 </p>
 
 <button onclick="unlockPro()">I Paid – Unlock</button>
 
-<p id="planText">Current Plan: Free Trial</p>
 <p id="usageText"></p>
 
 </div>
 
-<!-- SESSION -->
 <div class="card" id="session" style="display:none;">
 
 <div class="stats">
@@ -128,16 +173,17 @@ Start with 5 free sessions. Upgrade for unlimited access, full history, and stre
 <div class="stat">Limit<br><span id="limit">0</span></div>
 </div>
 
-<button class="good" onclick="followRule()">Followed</button>
-<button class="bad" onclick="breakRule()">Broke</button>
+<br>
+
+<button class="good" onclick="followRule()">Followed Plan</button>
+<button class="bad" onclick="breakRule()">Broke Rule</button>
 
 <div id="status"></div>
 <div id="report"></div>
 
 <div class="history">
-<h3>Session History</h3>
+<h3>History</h3>
 <div id="history"></div>
-<p id="upgradeMsg"></p>
 </div>
 
 </div>
@@ -152,24 +198,14 @@ let plan = localStorage.getItem("plan") || "free";
 let freeSessionsUsed = localStorage.getItem("freeSessionsUsed") || 0;
 let streak = localStorage.getItem("streak") || 0;
 
-/* INIT UI */
-document.getElementById("planText").innerText =
-  plan === "pro" ? "Current Plan: Pro" : "Current Plan: Free Trial";
-
 document.getElementById("streak").innerText = streak;
 
-/* USAGE UI */
 function updateUsageUI(){
-  if(plan === "free"){
-    let remaining = 5 - freeSessionsUsed;
-    document.getElementById("usageText").innerText =
-      "Free trial sessions left: " + remaining + " / 5";
-  } else {
-    document.getElementById("usageText").innerText = "Unlimited access unlocked";
-  }
+  let remaining = 5 - freeSessionsUsed;
+  document.getElementById("usageText").innerText =
+    plan === "free" ? "Free sessions left: " + remaining : "Unlimited access";
 }
 
-/* DAILY LOCK */
 function isLockedToday(){
   let lockDate = localStorage.getItem("lockDate");
   let today = new Date().toDateString();
@@ -178,13 +214,13 @@ function isLockedToday(){
 
 function startSession(){
 
-  if(plan === "free" && freeSessionsUsed >= 5){
-    alert("You've used all 5 free sessions.\n\nUpgrade to TradeTrack Pro (£15/month) for unlimited access and full performance tracking.");
+  if(plan==="free" && freeSessionsUsed>=5){
+    alert("Upgrade to continue.");
     return;
   }
 
   if(isLockedToday()){
-    alert("You are locked for today.");
+    alert("Locked for today.");
     return;
   }
 
@@ -229,24 +265,18 @@ function lock(){
 
   let score = Math.max(0,100-(breaks*25));
 
-  status.innerHTML = "<div class='locked'>SESSION LOCKED — DONE FOR TODAY</div>";
+  status.innerHTML = "<div class='locked'>SESSION LOCKED</div>";
   report.innerHTML = "<p>Score: "+score+"%</p>";
 
   localStorage.setItem("lockDate", new Date().toDateString());
 
-  if(plan === "free"){
+  if(plan==="free"){
     freeSessionsUsed++;
     localStorage.setItem("freeSessionsUsed", freeSessionsUsed);
   }
 
-  if(score >= 75){
-    streak++;
-  } else {
-    streak=0;
-  }
-
+  if(score>=75){streak++;} else {streak=0;}
   localStorage.setItem("streak", streak);
-
   document.getElementById("streak").innerText = streak;
 
   saveSession(score);
@@ -254,50 +284,26 @@ function lock(){
   updateUsageUI();
 }
 
-/* SAVE SESSION */
 function saveSession(score){
   let history = JSON.parse(localStorage.getItem("history")) || [];
-
-  history.push({
-    date: new Date().toLocaleString(),
-    trades,
-    breaks,
-    score
-  });
-
+  history.push({date:new Date().toLocaleString(),trades,breaks,score});
   localStorage.setItem("history", JSON.stringify(history));
 }
 
-/* LOAD HISTORY */
 function loadHistory(){
   let history = JSON.parse(localStorage.getItem("history")) || [];
-
-  let html = "";
-
+  let html="";
   history.slice().reverse().forEach(s=>{
-    html += "<p>"+s.date+" | Trades: "+s.trades+" | Breaks: "+s.breaks+" | Score: "+s.score+"%</p>";
+    html += "<p>"+s.date+" | "+s.score+"%</p>";
   });
-
   document.getElementById("history").innerHTML = html;
-
-  if(plan === "free"){
-    document.getElementById("upgradeMsg").innerText =
-      "Upgrade to Pro for unlimited access and full tracking.";
-  }
 }
 
-/* UNLOCK */
 function unlockPro(){
-  plan = "pro";
+  plan="pro";
   localStorage.setItem("plan","pro");
-
-  document.getElementById("planText").innerText = "Current Plan: Pro";
-  document.getElementById("streak").innerText = streak;
-
-  loadHistory();
+  alert("Pro unlocked");
   updateUsageUI();
-
-  alert("Pro unlocked. You're good.");
 }
 
 function update(){
@@ -305,7 +311,6 @@ function update(){
   breaksEl.innerText=breaks;
 }
 
-/* Elements */
 const tradesEl=document.getElementById("trades");
 const breaksEl=document.getElementById("breaks");
 const maxTradesInput=document.getElementById("maxTrades");
@@ -320,13 +325,8 @@ const c2=document.getElementById("c2");
 const c3=document.getElementById("c3");
 const c4=document.getElementById("c4");
 
-/* INIT */
 loadHistory();
 updateUsageUI();
-
-if(isLockedToday()){
-  status.innerHTML = "<div class='locked'>You are locked for today.</div>";
-}
 </script>
 
 </body>
