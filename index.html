@@ -20,14 +20,20 @@ body {
   text-align: center;
 }
 
-h1 { font-size: 48px; }
-p { color: #9ca3af; }
+h1 {
+  font-size: 48px;
+}
+
+p {
+  color: #9ca3af;
+}
 
 .card {
   background: rgba(255,255,255,0.05);
   padding: 25px;
   margin-top: 30px;
   border-radius: 16px;
+  backdrop-filter: blur(10px);
 }
 
 .features {
@@ -47,11 +53,19 @@ p { color: #9ca3af; }
 .btn {
   display: inline-block;
   margin-top: 40px;
-  padding: 14px 28px;
+  padding: 16px 32px;
   background: linear-gradient(135deg,#4f7cff,#7c3aed);
-  border-radius: 10px;
+  border-radius: 12px;
   text-decoration: none;
   color: white;
+  font-size: 18px;
+  box-shadow: 0 0 20px #4f7cff55;
+}
+
+.small {
+  font-size: 13px;
+  margin-top: 10px;
+  color: #6b7280;
 }
 
 .pricing {
@@ -73,37 +87,53 @@ p { color: #9ca3af; }
 
 <div class="container">
 
-<h1>Stop Overtrading. Build Discipline.</h1>
-<p>The execution system serious traders use to stay consistent.</p>
+<h1>Stop Breaking Your Trading Rules.</h1>
+<p>This system forces discipline, prevents overtrading, and locks you out when you lose control.</p>
+
+<a href="app.html" class="btn">Start Discipline Session</a>
+<p class="small">Built for traders who are serious about consistency.</p>
 
 <div class="features">
-<div class="card">❤️ Discipline tracking</div>
+<div class="card">❤️ Enforced discipline</div>
 <div class="card">⚡ Trade limits</div>
-<div class="card">🏆 Progress system</div>
-<div class="card">🚫 Stop overtrading</div>
+<div class="card">🏆 Streak system</div>
+<div class="card">🚫 Stops overtrading</div>
+</div>
+
+<div class="card">
+  <h2>Why traders fail</h2>
+  <p>It's not strategy. It's not entries.</p>
+  <p><strong>It's discipline.</strong></p>
+  <p>Overtrading. Revenge trading. Ignoring rules.</p>
+  <p>TradeTrack forces you to follow your system — or stops you from trading.</p>
 </div>
 
 <div class="dashboard">
 <h2>Live Dashboard Preview</h2>
-<p>❤️ Lives: 2 | ⚡ XP: 120 | 🏆 Level: 3</p>
-<p>Win ✅ | Loss ❌ | Win ✅</p>
+<p>Trades: 2 | Breaks: 1 | Limit: 3</p>
+<p>Status: ACTIVE → LOCKED</p>
 </div>
 
-<a href="app.html" class="btn">Enter App</a>
-
 <div class="pricing">
+
 <div class="plan">
 <h3>Free</h3>
 <p>$0</p>
+<p>Basic session tracking</p>
 </div>
+
 <div class="plan">
 <h3>Pro</h3>
-<p>$9/mo</p>
+<p>$7/mo</p>
+<p>Discipline system + session lock</p>
 </div>
+
 <div class="plan">
 <h3>Elite</h3>
-<p>$19/mo</p>
+<p>$15/mo</p>
+<p>Full system + streaks + analytics</p>
 </div>
+
 </div>
 
 </div>
