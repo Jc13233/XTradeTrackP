@@ -8,77 +8,92 @@
 <style>
 body {
   margin: 0;
-  font-family: Arial;
+  font-family: 'Segoe UI', sans-serif;
   background: radial-gradient(circle at top, #0f172a, #020617);
   color: white;
+  text-align: center;
 }
 
 .container {
   max-width: 1000px;
   margin: auto;
-  padding: 80px 20px;
-  text-align: center;
+  padding: 60px 20px;
 }
 
 h1 {
-  font-size: 48px;
+  font-size: 42px;
 }
 
-p {
-  color: #9ca3af;
+.subtitle {
+  opacity: 0.6;
+  margin-bottom: 30px;
 }
 
-.card {
-  background: rgba(255,255,255,0.05);
-  padding: 25px;
-  margin-top: 30px;
-  border-radius: 16px;
-  backdrop-filter: blur(10px);
-}
-
-.features {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 20px;
-  margin-top: 40px;
-}
-
-.dashboard {
-  margin-top: 60px;
-  padding: 30px;
-  background: #020617;
-  border-radius: 20px;
-}
-
-.btn {
-  display: inline-block;
-  margin-top: 40px;
-  padding: 16px 32px;
-  background: linear-gradient(135deg,#4f7cff,#7c3aed);
+button {
+  padding: 14px 24px;
   border-radius: 12px;
-  text-decoration: none;
-  color: white;
-  font-size: 18px;
-  box-shadow: 0 0 20px #4f7cff55;
-}
-
-.small {
-  font-size: 13px;
+  border: none;
+  cursor: pointer;
+  font-weight: bold;
   margin-top: 10px;
-  color: #6b7280;
+  transition: 0.2s;
 }
 
-.pricing {
-  margin-top: 80px;
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px,1fr));
+button:hover {
+  transform: translateY(-2px);
+}
+
+.primary {
+  background: linear-gradient(135deg,#4f7cff,#7c3aed);
+  color: white;
+}
+
+.secondary {
+  background: black;
+  color: white;
+}
+
+/* FEATURES */
+.features {
+  display: flex;
+  justify-content: center;
   gap: 20px;
+  flex-wrap: wrap;
+  margin-top: 50px;
+}
+
+.feature {
+  background: rgba(255,255,255,0.05);
+  padding: 20px;
+  border-radius: 16px;
+  width: 250px;
+}
+
+/* PRICING */
+.pricing {
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-top: 50px;
 }
 
 .plan {
   background: rgba(255,255,255,0.05);
   padding: 25px;
   border-radius: 16px;
+  width: 260px;
+}
+
+.pro {
+  background: linear-gradient(135deg,#4f7cff,#7c3aed);
+  box-shadow: 0 0 25px rgba(124,58,237,0.5);
+}
+
+ul {
+  text-align: left;
+  font-size: 14px;
+  opacity: 0.85;
 }
 </style>
 </head>
@@ -87,51 +102,70 @@ p {
 
 <div class="container">
 
-<h1>Stop Breaking Your Trading Rules.</h1>
-<p>This system forces discipline, prevents overtrading, and locks you out when you lose control.</p>
+<h1>TradeTrack</h1>
+<p class="subtitle">Build discipline. Eliminate overtrading. Track real performance.</p>
 
-<a href="app.html" class="btn">Start Discipline Session</a>
-<p class="small">Built for traders who are serious about consistency.</p>
+<a href="app.html">
+<button class="primary">Start Free Trial</button>
+</a>
 
+<!-- FEATURES -->
 <div class="features">
-<div class="card">❤️ Enforced discipline</div>
-<div class="card">⚡ Trade limits</div>
-<div class="card">🏆 Streak system</div>
-<div class="card">🚫 Stops overtrading</div>
+
+<div class="feature">
+<h3>Discipline System</h3>
+<p>Follow structured rules before every trade.</p>
 </div>
 
-<div class="card">
-  <h2>Why traders fail</h2>
-  <p>It's not strategy. It's not entries.</p>
-  <p><strong>It's discipline.</strong></p>
-  <p>Overtrading. Revenge trading. Ignoring rules.</p>
-  <p>TradeTrack forces you to follow your system — or stops you from trading.</p>
+<div class="feature">
+<h3>Session Tracking</h3>
+<p>Track your behavior and performance in real time.</p>
 </div>
 
-<div class="dashboard">
-<h2>Live Dashboard Preview</h2>
-<p>Trades: 2 | Breaks: 1 | Limit: 3</p>
-<p>Status: ACTIVE → LOCKED</p>
+<div class="feature">
+<h3>Streak Building</h3>
+<p>Stay consistent and build discipline over time.</p>
 </div>
 
+</div>
+
+<!-- PRICING -->
 <div class="pricing">
 
+<!-- FREE -->
 <div class="plan">
-<h3>Free</h3>
-<p>$0</p>
-<p>Basic session tracking</p>
+<h3>Free Trial</h3>
+<h2>£0</h2>
+<p style="opacity:0.7;">Try the system</p>
+
+<ul>
+<li>✔ 5 Discipline Sessions</li>
+<li>✔ Full System Access</li>
+<li>✔ Basic Tracking</li>
+<li>✖ Unlimited Use</li>
+</ul>
+
+<a href="app.html">
+<button class="primary">Start Free</button>
+</a>
 </div>
 
-<div class="plan">
+<!-- PRO -->
+<div class="plan pro">
 <h3>Pro</h3>
-<p>$7/mo</p>
-<p>Discipline system + session lock</p>
-</div>
+<h2>£15/month</h2>
+<p>For serious traders</p>
 
-<div class="plan">
-<h3>Elite</h3>
-<p>$15/mo</p>
-<p>Full system + streaks + analytics</p>
+<ul>
+<li>✔ Unlimited Sessions</li>
+<li>✔ Full Performance Tracking</li>
+<li>✔ Streak System</li>
+<li>✔ Discipline Scoring</li>
+</ul>
+
+<a href="https://buy.stripe.com/9B628r8q61Zr0geerN6Na00" target="_blank">
+<button class="secondary">Upgrade Now</button>
+</a>
 </div>
 
 </div>
