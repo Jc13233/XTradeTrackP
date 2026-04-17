@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TradeTrack App</title>
+
+<style>
+body {
+  margin:0;
+  font-family: Arial;
+  background:#020617;
+  color:white;
+  text-align:center;
+}
+
+.container {
+  max-width:600px;
+  margin:auto;
+  padding:40px 20px;
+}
+
+input {
+  padding:10px;
+  margin:10px;
+  width:120px;
+  border-radius:8px;
+  border:none;
+}
+
+button {
+  padding:12px 20px;
+  margin:10px;
+  border:none;
+  border-radius:10px;
+  cursor:pointer;
+}
+
+.start { background:#4f7cff; }
+.good { background:#16a34a; }
+.bad { background:#dc2626; }
+
+.card {
+  background:#0f172a;
+  padding:20px;
+  margin-top:20px;
+  border-radius:12px;
+}
+
+.locked {
+  color:red;
+  font-size:20px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<h1>Discipline Session</h1>
+
+<div class="card" id="setup">
+<p>Max Trades</p>
+<input id="maxTrades" type="number" value="3">
+
+<p>Max Rule Breaks</p>
+<input id="maxBreaks" type="number" value="2">
+
+<br>
+<button class="start" onclick="startSession()">Start</button>
+</div>
+
+<div class="card" id="session" style="display:none;">
+<p>Trades: <span id="trades">0</span></p>
+<p>Breaks: <span id="breaks">0</span></p>
+
+<button class="good" onclick="followRule()">Followed</button>
+<button class="bad" onclick="breakRule()">Broke</button>
+
+<div id="status"></div>
+</div>
+
+</div>
+
+<script>
+let trades = 0;
+let breaks = 0;
+let maxTrades = 0;
+let maxBreaks = 0;
+let locked = false;
+
+function startSession() {
+  maxTrades = parseInt(document.getElementById("maxTrades").value);
+  maxBreaks = parseInt(document.getElementById("maxBreaks").value);
+
+  document.getElementById("setup").style.display = "none";
+  document.getElementById("session").style.display = "block";
+}
+
+function followRule() {
+  if (locked) return;
+  trades++;
+  update();
+  check();
+}
+
+function breakRule() {
+  if (locked) return;
+  trades++;
+  breaks++;
+  update();
+  check();
+}
+
+function check() {
+  if (breaks >= maxBreaks || trades >= maxTrades) {
+    locked = true;
+    document.getElementById("status").innerHTML =
+      "<div class='locked'>SESSION LOCKED</div>";
+  }
+}
+
+function update() {
+  document.getElementById("trades").innerText = trades;
+  document.getElementById("breaks").innerText = breaks;
+}
+</script>
+
+</body>
+</html>
