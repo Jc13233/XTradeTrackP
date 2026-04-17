@@ -20,84 +20,55 @@ body {
   text-align: center;
 }
 
-h1 {
-  font-size: 36px;
-}
-
-p {
-  color: #9ca3af;
-}
-
 .card {
   background: rgba(255,255,255,0.05);
   backdrop-filter: blur(12px);
   padding: 25px;
   margin-top: 25px;
   border-radius: 16px;
-  border: 1px solid rgba(255,255,255,0.08);
 }
 
 input {
-  padding: 12px;
-  margin: 10px;
+  padding: 10px;
+  margin: 8px;
   width: 120px;
   border-radius: 10px;
   border: none;
   background: #020617;
   color: white;
-  text-align: center;
 }
 
 button {
-  padding: 14px 22px;
+  padding: 12px 20px;
   margin: 10px;
+  border-radius: 10px;
   border: none;
-  border-radius: 12px;
   cursor: pointer;
-  font-size: 15px;
-  transition: 0.2s;
 }
 
-.start {
-  background: linear-gradient(135deg,#4f7cff,#7c3aed);
-  color: white;
-  box-shadow: 0 0 20px #4f7cff55;
-}
-
-.good {
-  background: #16a34a;
-}
-
-.bad {
-  background: #dc2626;
-}
-
-button:hover {
-  transform: scale(1.05);
-}
+.start { background: linear-gradient(135deg,#4f7cff,#7c3aed); }
+.good { background: #16a34a; }
+.bad { background: #dc2626; }
 
 .stats {
   display: flex;
   justify-content: space-around;
-  margin-top: 20px;
 }
 
 .stat {
   background: #020617;
   padding: 15px;
-  border-radius: 12px;
+  border-radius: 10px;
   width: 30%;
 }
 
 .locked {
-  color: #ef4444;
+  color: red;
   font-size: 20px;
-  margin-top: 20px;
-  font-weight: bold;
 }
 
-.warning {
-  color: #f59e0b;
+.cooldown {
+  color: orange;
   margin-top: 10px;
 }
 </style>
@@ -108,132 +79,150 @@ button:hover {
 <div class="container">
 
 <h1>Discipline Session</h1>
-<p>Rules are locked. Execution is everything.</p>
 
 <!-- SETUP -->
 <div class="card" id="setup">
-<h3>Set Your Session Rules</h3>
+<h3>Set Rules</h3>
 
-<h4>Pre-Trade Checklist</h4>
-<label><input type="checkbox" id="c1"> I have a clear setup</label><br>
-<label><input type="checkbox" id="c2"> Risk is defined</label><br>
-<label><input type="checkbox" id="c3"> No revenge trading</label><br>
-<label><input type="checkbox" id="c4"> Following my strategy</label><br>
+<label><input type="checkbox" id="c1"> Clear setup</label><br>
+<label><input type="checkbox" id="c2"> Risk defined</label><br>
+<label><input type="checkbox" id="c3"> No revenge</label><br>
+<label><input type="checkbox" id="c4"> Follow system</label><br>
 
 <p>Max Trades</p>
 <input id="maxTrades" type="number" value="3">
 
-<p>Max Rule Breaks</p>
+<p>Max Breaks</p>
 <input id="maxBreaks" type="number" value="2">
 
 <br>
-<button class="start" onclick="startSession()">Start Session</button>
+<button class="start" onclick="startSession()">Start</button>
+
+<p>🔥 Streak: <span id="streak">0</span></p>
 </div>
 
 <!-- SESSION -->
 <div class="card" id="session" style="display:none;">
 
 <div class="stats">
-  <div class="stat">
-    Trades<br><strong id="trades">0</strong>
-  </div>
-  <div class="stat">
-    Breaks<br><strong id="breaks">0</strong>
-  </div>
-  <div class="stat">
-    Limit<br><strong id="limit">0</strong>
-  </div>
+<div class="stat">Trades<br><span id="trades">0</span></div>
+<div class="stat">Breaks<br><span id="breaks">0</span></div>
+<div class="stat">Limit<br><span id="limit">0</span></div>
 </div>
 
-<button class="good" onclick="followRule()">Followed Rules</button>
-<button class="bad" onclick="breakRule()">Broke Rules</button>
+<button class="good" onclick="followRule()">Followed</button>
+<button class="bad" onclick="breakRule()">Broke</button>
 
 <div id="status"></div>
-<div id="report" style="margin-top:20px;"></div>
+<div id="cooldown"></div>
+<div id="report"></div>
 
 </div>
 
 </div>
 
 <script>
-let trades = 0;
-let breaks = 0;
-let maxTrades = 0;
-let maxBreaks = 0;
-let locked = false;
+let trades=0, breaks=0, maxTrades=0, maxBreaks=0;
+let locked=false;
+let cooldownTime=10;
+let streak = localStorage.getItem("streak") || 0;
 
-function startSession() {
-  if (
-    !document.getElementById("c1").checked ||
-    !document.getElementById("c2").checked ||
-    !document.getElementById("c3").checked ||
-    !document.getElementById("c4").checked
-  ) {
-    alert("Complete checklist before starting.");
+document.getElementById("streak").innerText = streak;
+
+function startSession(){
+  if(!c1.checked||!c2.checked||!c3.checked||!c4.checked){
+    alert("Complete checklist");
     return;
   }
 
-  maxTrades = parseInt(document.getElementById("maxTrades").value);
-  maxBreaks = parseInt(document.getElementById("maxBreaks").value);
+  trades=0; breaks=0; locked=false;
 
-  trades = 0;
-  breaks = 0;
-  locked = false;
+  maxTrades = +maxTradesInput.value;
+  maxBreaks = +maxBreaksInput.value;
 
-  document.getElementById("setup").style.display = "none";
-  document.getElementById("session").style.display = "block";
+  setup.style.display="none";
+  session.style.display="block";
 
-  document.getElementById("limit").innerText = maxTrades;
-
-  update();
+  limit.innerText = maxTrades;
 }
 
-function followRule() {
-  if (locked) return;
-
+function followRule(){
+  if(locked) return;
   trades++;
   update();
-  checkLimits();
+  check();
 }
 
-function breakRule() {
-  if (locked) return;
-
-  trades++;
-  breaks++;
+function breakRule(){
+  if(locked) return;
+  trades++; breaks++;
   update();
-  checkLimits();
+  check();
 }
 
-function checkLimits() {
-  if (breaks >= maxBreaks) {
-    lockSession("Too many rule breaks");
-  }
-
-  if (trades >= maxTrades) {
-    lockSession("Max trades reached");
+function check(){
+  if(breaks>=maxBreaks || trades>=maxTrades){
+    lock();
   }
 }
 
-function lockSession(reason) {
-  locked = true;
+function lock(){
+  locked=true;
 
-  let score = Math.max(0, 100 - (breaks * 25));
+  let score = Math.max(0,100-(breaks*25));
 
-  document.getElementById("status").innerHTML =
-    "<div class='locked'>SESSION LOCKED</div><div class='warning'>" + reason + "</div>";
+  status.innerHTML = "<div class='locked'>SESSION LOCKED</div>";
 
-  document.getElementById("report").innerHTML =
-    "<div class='card'><h3>Session Report</h3>" +
-    "<p>Trades: " + trades + "</p>" +
-    "<p>Rule Breaks: " + breaks + "</p>" +
-    "<p>Discipline Score: " + score + "%</p></div>";
+  report.innerHTML =
+    "<p>Score: "+score+"%</p>";
+
+  if(score >= 75){
+    streak++;
+  } else {
+    streak=0;
+  }
+
+  localStorage.setItem("streak", streak);
+  document.getElementById("streak").innerText = streak;
+
+  startCooldown();
 }
 
-function update() {
-  document.getElementById("trades").innerText = trades;
-  document.getElementById("breaks").innerText = breaks;
+function startCooldown(){
+  let time = cooldownTime;
+
+  let interval = setInterval(()=>{
+    cooldown.innerHTML = "<div class='cooldown'>Cooldown: "+time+"s</div>";
+    time--;
+
+    if(time<0){
+      clearInterval(interval);
+      cooldown.innerHTML = "";
+      setup.style.display="block";
+      session.style.display="none";
+    }
+  },1000);
 }
+
+function update(){
+  tradesEl.innerText=trades;
+  breaksEl.innerText=breaks;
+}
+
+const tradesEl=document.getElementById("trades");
+const breaksEl=document.getElementById("breaks");
+const maxTradesInput=document.getElementById("maxTrades");
+const maxBreaksInput=document.getElementById("maxBreaks");
+const setup=document.getElementById("setup");
+const session=document.getElementById("session");
+const limit=document.getElementById("limit");
+const status=document.getElementById("status");
+const report=document.getElementById("report");
+const cooldown=document.getElementById("cooldown");
+const c1=document.getElementById("c1");
+const c2=document.getElementById("c2");
+const c3=document.getElementById("c3");
+const c4=document.getElementById("c4");
 </script>
 
 </body>
