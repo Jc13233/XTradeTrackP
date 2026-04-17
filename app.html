@@ -79,13 +79,14 @@ button:hover {
   height: 100%;
   width: 100%;
   background: linear-gradient(90deg,#22c55e,#4f7cff);
+  transition: width 0.3s ease;
 }
 
 .glow { box-shadow: 0 0 20px #22c55e; }
 .fail { box-shadow: 0 0 20px #ef4444; }
 
 .grade {
-  font-size: 40px;
+  font-size: 42px;
   font-weight: bold;
   margin-top: 10px;
 }
@@ -96,6 +97,11 @@ button:hover {
   margin-top: 10px;
   font-size: 14px;
   opacity: 0.8;
+}
+
+#streak {
+  text-shadow: 0 0 12px rgba(34,197,94,0.9);
+  font-weight: bold;
 }
 </style>
 </head>
@@ -121,13 +127,12 @@ button:hover {
 
 <button class="start" onclick="startSession()">Start Session</button>
 
-<p>🔥 Streak: <span id="streak">0</span></p>
+<p>🔥 Discipline Streak: <span id="streak">0</span></p>
 
 <div class="plan-box" id="planText">
 Plan: Free Trial
 </div>
 
-<!-- NEW STRIPE LINK -->
 <a href="https://buy.stripe.com/aFa8wP0XEfQhfb81F16Na01" target="_blank">
 <button class="start">Upgrade to Pro — £15/month</button>
 </a>
@@ -141,8 +146,8 @@ Plan: Free Trial
 
 <div class="stats">
 <div class="stat">Trades<br><span id="trades">0</span></div>
-<div class="stat">Breaks<br><span id="breaks">0</span></div>
-<div class="stat">Score<br><span id="score">100</span>%</div>
+<div class="stat">Mistakes<br><span id="breaks">0</span></div>
+<div class="stat">Discipline<br><span id="score">100</span>%</div>
 </div>
 
 <div class="progress-bar">
@@ -151,8 +156,8 @@ Plan: Free Trial
 
 <br>
 
-<button class="good" onclick="followRule()">Followed Plan</button>
-<button class="bad" onclick="breakRule()">Broke Rule</button>
+<button class="good" onclick="followRule()">Executed Discipline</button>
+<button class="bad" onclick="breakRule()">Broke Your System</button>
 
 <br>
 <button onclick="endSession()">End Session</button>
@@ -251,17 +256,28 @@ function updateScore(){
 /* END */
 function endSession(){
 
+  alert("Session complete. You're done for today.");
+
   if(plan==="free"){
     freeSessionsUsed++;
     localStorage.setItem("freeSessionsUsed", freeSessionsUsed);
   }
 
   let grade = "D";
-  let text = "Discipline needs work.";
+  let text = "You broke discipline. This is exactly what holds traders back.";
 
-  if(score >= 90){ grade="A"; text="Elite discipline."; }
-  else if(score >= 75){ grade="B"; text="Solid control."; }
-  else if(score >= 50){ grade="C"; text="Needs tightening."; }
+  if(score >= 90){
+    grade="A";
+    text="Elite execution. This is professional-level discipline.";
+  }
+  else if(score >= 75){
+    grade="B";
+    text="Good control. You're building consistency.";
+  }
+  else if(score >= 50){
+    grade="C";
+    text="You slipped. Tighten your rules next session.";
+  }
 
   if(score >= 75){ streak++; } else { streak=0; }
 
