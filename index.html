@@ -1,125 +1,170 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>TradeTrack</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>TradeTrack</title>
 
-  <style>
-    body {
-      margin: 0;
-      font-family: Arial, sans-serif;
-      background: #0b0f1a;
-      color: white;
-    }
+<style>
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: radial-gradient(circle at top, #111827, #020617);
+  color: white;
+  overflow-x: hidden;
+}
 
-    .container {
-      max-width: 900px;
-      margin: auto;
-      padding: 60px 20px;
-      text-align: center;
-    }
+/* Glow background */
+body::before {
+  content: "";
+  position: fixed;
+  width: 600px;
+  height: 600px;
+  background: radial-gradient(circle, #4f7cff55, transparent);
+  top: -200px;
+  left: -200px;
+  filter: blur(120px);
+  z-index: 0;
+}
 
-    h1 {
-      font-size: 42px;
-      margin-bottom: 10px;
-    }
+.container {
+  position: relative;
+  z-index: 1;
+  max-width: 900px;
+  margin: auto;
+  padding: 80px 20px;
+  text-align: center;
+}
 
-    p {
-      font-size: 18px;
-      color: #b5b5b5;
-    }
+/* HERO */
+h1 {
+  font-size: 48px;
+  margin-bottom: 15px;
+  animation: fadeUp 1s ease forwards;
+}
 
-    .card {
-      background: #141a2a;
-      padding: 25px;
-      margin-top: 25px;
-      border-radius: 12px;
-    }
+p {
+  font-size: 18px;
+  color: #a1a1aa;
+}
 
-    .features {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 15px;
-      margin-top: 30px;
-    }
+/* GLASS CARD */
+.card {
+  background: rgba(255,255,255,0.05);
+  backdrop-filter: blur(10px);
+  padding: 25px;
+  margin-top: 30px;
+  border-radius: 16px;
+  border: 1px solid rgba(255,255,255,0.08);
+  transition: 0.3s;
+}
 
-    .feature {
-      background: #1b2236;
-      padding: 15px;
-      border-radius: 10px;
-    }
+.card:hover {
+  transform: translateY(-5px);
+  border-color: #4f7cff;
+}
 
-    .btn {
-      display: inline-block;
-      margin-top: 30px;
-      padding: 14px 28px;
-      background: #4f7cff;
-      color: white;
-      border-radius: 8px;
-      text-decoration: none;
-      font-size: 16px;
-    }
+/* FEATURES GRID */
+.features {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 20px;
+  margin-top: 40px;
+}
 
-    .btn:hover {
-      background: #3c63d6;
-    }
+.feature {
+  background: rgba(255,255,255,0.04);
+  padding: 18px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.06);
+  transition: 0.3s;
+}
 
-    .small {
-      margin-top: 15px;
-      font-size: 14px;
-      color: #777;
-    }
-  </style>
+.feature:hover {
+  transform: scale(1.05);
+  border-color: #4f7cff;
+}
+
+/* BUTTON */
+.btn {
+  display: inline-block;
+  margin-top: 40px;
+  padding: 14px 28px;
+  background: linear-gradient(135deg, #4f7cff, #7c3aed);
+  color: white;
+  border-radius: 10px;
+  text-decoration: none;
+  font-size: 16px;
+  transition: 0.3s;
+  box-shadow: 0 0 20px #4f7cff55;
+}
+
+.btn:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 30px #4f7cffaa;
+}
+
+/* SMALL TEXT */
+.small {
+  margin-top: 15px;
+  font-size: 14px;
+  color: #6b7280;
+}
+
+/* ANIMATION */
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+</style>
 </head>
 
 <body>
-  <div class="container">
+<div class="container">
 
-    <!-- HERO -->
-    <h1>Stop Overtrading. Start Trading Like a Professional.</h1>
-    <p>
-      TradeTrack helps futures traders build discipline, follow rules,
-      and stay consistent using a structured execution system.
-    </p>
+<h1>Stop Overtrading. Start Trading Like a Professional.</h1>
+<p>
+TradeTrack helps futures traders build discipline, follow rules,
+and stay consistent using a structured execution system.
+</p>
 
-    <!-- PROBLEM -->
-    <div class="card">
-      <h2>The Problem</h2>
-      <p>
-        Most traders don’t lose because of bad strategies.
-        They lose because they overtrade, break rules, and lose control.
-      </p>
-    </div>
+<div class="card">
+<h2>The Problem</h2>
+<p>
+Most traders don’t lose because of bad strategies.
+They lose because they overtrade, break rules, and lose control.
+</p>
+</div>
 
-    <!-- FEATURES -->
-    <div class="features">
-      <div class="feature">❤️ Track your daily discipline</div>
-      <div class="feature">⚡ Stay within your trade limits</div>
-      <div class="feature">🏆 Build consistency over time</div>
-      <div class="feature">🎯 Focus only on high-quality setups</div>
-      <div class="feature">🚫 Prevent overtrading</div>
-      <div class="feature">📊 Get clear session feedback</div>
-    </div>
+<div class="features">
+<div class="feature">❤️ Track your discipline</div>
+<div class="feature">⚡ Stay within limits</div>
+<div class="feature">🏆 Build consistency</div>
+<div class="feature">🎯 Focus on A+ setups</div>
+<div class="feature">🚫 Prevent overtrading</div>
+<div class="feature">📊 Session feedback</div>
+</div>
 
-    <!-- HOW IT WORKS -->
-    <div class="card">
-      <h2>How it works</h2>
-      <p>1. Start your session with clear rules</p>
-      <p>2. Track each trade in seconds</p>
-      <p>3. Get instant feedback on your discipline</p>
-      <p>4. Improve your execution over time</p>
-    </div>
+<div class="card">
+<h2>How it works</h2>
+<p>1. Set your trading rules</p>
+<p>2. Track trades instantly</p>
+<p>3. Get real-time feedback</p>
+<p>4. Improve daily</p>
+</div>
 
-    <!-- BUTTON -->
-    <a href="PASTE_YOUR_GOOGLE_FORM_LINK_HERE" target="_blank" class="btn">
-      Get Early Access
-    </a>
+<a href="PASTE_YOUR_GOOGLE_FORM_LINK_HERE" target="_blank" class="btn">
+Get Early Access
+</a>
 
-    <p class="small">
-      Limited early access for serious traders only.
-    </p>
+<p class="small">Limited early access for serious traders only.</p>
 
-  </div>
+</div>
 </body>
 </html>
