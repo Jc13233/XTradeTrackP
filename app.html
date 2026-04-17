@@ -71,6 +71,11 @@ button {
   color: orange;
   margin-top: 10px;
 }
+
+.history {
+  margin-top: 20px;
+  text-align: left;
+}
 </style>
 </head>
 
@@ -117,6 +122,11 @@ button {
 <div id="cooldown"></div>
 <div id="report"></div>
 
+<div class="history">
+<h3>Session History</h3>
+<div id="history"></div>
+</div>
+
 </div>
 
 </div>
@@ -124,12 +134,23 @@ button {
 <script>
 let trades=0, breaks=0, maxTrades=0, maxBreaks=0;
 let locked=false;
-let cooldownMinutes = 60;
 let streak = localStorage.getItem("streak") || 0;
 
 document.getElementById("streak").innerText = streak;
 
+/* DAILY LOCK CHECK */
+function isLockedToday(){
+  let lockDate = localStorage.getItem("lockDate");
+  let today = new Date().toDateString();
+  return lockDate === today;
+}
+
 function startSession(){
+  if(isLockedToday()){
+    alert("You are locked for today.");
+    return;
+  }
+
   if(!c1.checked||!c2.checked||!c3.checked||!c4.checked){
     alert("Complete checklist");
     return;
@@ -171,11 +192,15 @@ function lock(){
 
   let score = Math.max(0,100-(breaks*25));
 
-  status.innerHTML = "<div class='locked'>SESSION LOCKED</div>";
+  status.innerHTML = "<div class='locked'>SESSION LOCKED — DONE FOR TODAY</div>";
 
   report.innerHTML =
     "<p>Score: "+score+"%</p>";
 
+  /* SAVE DAILY LOCK */
+  localStorage.setItem("lockDate", new Date().toDateString());
+
+  /* STREAK */
   if(score >= 75){
     streak++;
   } else {
@@ -185,44 +210,35 @@ function lock(){
   localStorage.setItem("streak", streak);
   document.getElementById("streak").innerText = streak;
 
-  startCooldown();
+  saveSession(score);
+  loadHistory();
 }
 
-function startCooldown(){
-  let endTime = Date.now() + cooldownMinutes * 60 * 1000;
-  localStorage.setItem("cooldownEnd", endTime);
-  runCooldown();
+/* SAVE SESSION */
+function saveSession(score){
+  let history = JSON.parse(localStorage.getItem("history")) || [];
+
+  history.push({
+    date: new Date().toLocaleString(),
+    trades,
+    breaks,
+    score
+  });
+
+  localStorage.setItem("history", JSON.stringify(history));
 }
 
-function runCooldown(){
-  let interval = setInterval(()=>{
-    let now = Date.now();
-    let endTime = localStorage.getItem("cooldownEnd");
+/* LOAD HISTORY */
+function loadHistory(){
+  let history = JSON.parse(localStorage.getItem("history")) || [];
 
-    if(!endTime){
-      clearInterval(interval);
-      return;
-    }
+  let html = "";
 
-    let remaining = Math.floor((endTime - now) / 1000);
+  history.slice().reverse().forEach(s=>{
+    html += "<p>"+s.date+" | Trades: "+s.trades+" | Breaks: "+s.breaks+" | Score: "+s.score+"%</p>";
+  });
 
-    if(remaining <= 0){
-      clearInterval(interval);
-      cooldown.innerHTML = "";
-      localStorage.removeItem("cooldownEnd");
-
-      setup.style.display="block";
-      session.style.display="none";
-      return;
-    }
-
-    let mins = Math.floor(remaining / 60);
-    let secs = remaining % 60;
-
-    cooldown.innerHTML =
-      "<div class='cooldown'>Cooldown: " + mins + "m " + secs + "s</div>";
-
-  },1000);
+  document.getElementById("history").innerHTML = html;
 }
 
 function update(){
@@ -240,17 +256,17 @@ const session=document.getElementById("session");
 const limit=document.getElementById("limit");
 const status=document.getElementById("status");
 const report=document.getElementById("report");
-const cooldown=document.getElementById("cooldown");
 const c1=document.getElementById("c1");
 const c2=document.getElementById("c2");
 const c3=document.getElementById("c3");
 const c4=document.getElementById("c4");
 
-/* Auto resume cooldown */
-if(localStorage.getItem("cooldownEnd")){
-  setup.style.display="none";
-  session.style.display="block";
-  runCooldown();
+/* LOAD HISTORY ON START */
+loadHistory();
+
+/* CHECK DAILY LOCK ON LOAD */
+if(isLockedToday()){
+  status.innerHTML = "<div class='locked'>You are locked for today. Come back tomorrow.</div>";
 }
 </script>
 
