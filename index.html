@@ -1,42 +1,36 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>TradeTrack</title>
 
 <style>
 body {
   margin: 0;
-  font-family: Arial, sans-serif;
-  background: radial-gradient(circle at top, #111827, #020617);
+  font-family: Arial;
+  background: radial-gradient(circle at top, #0f172a, #020617);
   color: white;
 }
 
-/* Container */
+/* Layout */
 .container {
-  max-width: 1000px;
+  max-width: 1100px;
   margin: auto;
   padding: 80px 20px;
   text-align: center;
 }
 
-h1 {
-  font-size: 48px;
-}
+h1 { font-size: 48px; }
+p { color: #9ca3af; }
 
-p {
-  color: #a1a1aa;
-}
-
-/* Glass cards */
+/* Glass */
 .card {
   background: rgba(255,255,255,0.05);
-  backdrop-filter: blur(10px);
+  backdrop-filter: blur(12px);
   padding: 25px;
   margin-top: 30px;
   border-radius: 16px;
-  border: 1px solid rgba(255,255,255,0.08);
 }
 
 /* Features */
@@ -47,19 +41,12 @@ p {
   margin-top: 40px;
 }
 
-.feature {
-  background: rgba(255,255,255,0.04);
-  padding: 18px;
-  border-radius: 12px;
-}
-
 /* Dashboard */
 .dashboard {
   margin-top: 60px;
-  padding: 25px;
-  border-radius: 20px;
+  padding: 30px;
   background: #020617;
-  border: 1px solid #1e293b;
+  border-radius: 20px;
 }
 
 /* Stats */
@@ -76,164 +63,161 @@ p {
   font-size: 20px;
 }
 
-/* Progress bar */
+/* Progress */
 .progress {
   height: 10px;
   background: #1e293b;
   border-radius: 10px;
-  overflow: hidden;
   margin-top: 15px;
 }
 
 .progress-bar {
-  width: 0%;
   height: 100%;
-  background: linear-gradient(90deg, #4f7cff, #7c3aed);
-  animation: loadBar 3s forwards;
-  box-shadow: 0 0 15px #4f7cff;
-}
-
-/* Live trades */
-.trades {
-  margin-top: 20px;
-  font-size: 16px;
+  width: 70%;
+  background: linear-gradient(90deg,#4f7cff,#7c3aed);
+  box-shadow: 0 0 20px #4f7cff;
 }
 
 /* Button */
 .btn {
   display: inline-block;
-  margin-top: 40px;
+  margin-top: 30px;
   padding: 14px 28px;
-  background: linear-gradient(135deg, #4f7cff, #7c3aed);
-  color: white;
+  background: linear-gradient(135deg,#4f7cff,#7c3aed);
   border-radius: 10px;
   text-decoration: none;
-  box-shadow: 0 0 20px #4f7cff55;
-  transition: 0.3s;
+  color: white;
 }
 
-.btn:hover {
-  transform: scale(1.05);
-  box-shadow: 0 0 30px #4f7cffaa;
+/* Pricing */
+.pricing {
+  margin-top: 80px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px,1fr));
+  gap: 20px;
 }
 
-.small {
-  margin-top: 15px;
-  font-size: 14px;
-  color: #6b7280;
+.plan {
+  background: rgba(255,255,255,0.05);
+  padding: 25px;
+  border-radius: 16px;
+}
+
+.price {
+  font-size: 32px;
+  margin: 10px 0;
+}
+
+/* Modal */
+.modal {
+  display: none;
+  position: fixed;
+  top:0; left:0;
+  width:100%; height:100%;
+  background: rgba(0,0,0,0.7);
+  justify-content:center;
+  align-items:center;
+}
+
+.modal-content {
+  background:#020617;
+  padding:30px;
+  border-radius:12px;
+}
+
+input {
+  padding:10px;
+  margin:10px 0;
+  width:200px;
 }
 
 /* Animations */
-@keyframes loadBar {
-  from { width: 0%; }
-  to { width: 75%; }
-}
-
-.pulse {
-  animation: pulse 1.5s infinite;
-}
-
+.pulse { animation: pulse 1.5s infinite; }
 @keyframes pulse {
-  0% { opacity: 1; }
-  50% { opacity: 0.5; }
-  100% { opacity: 1; }
+  0%{opacity:1} 50%{opacity:0.5} 100%{opacity:1}
 }
 </style>
 </head>
 
 <body>
+
 <div class="container">
 
-<h1>Stop Overtrading. Start Trading Like a Professional.</h1>
-<p>
-TradeTrack helps futures traders build discipline, follow rules,
-and stay consistent using a structured execution system.
-</p>
-
-<div class="card">
-<h2>The Problem</h2>
-<p>
-Most traders fail not because of strategy,
-but because they lack discipline and control.
-</p>
-</div>
+<h1>Stop Overtrading. Build Discipline.</h1>
+<p>The execution system serious traders use to stay consistent.</p>
 
 <div class="features">
-<div class="feature">❤️ Track discipline</div>
-<div class="feature">⚡ Stay within limits</div>
-<div class="feature">🏆 Build consistency</div>
-<div class="feature">🎯 Focus on A+ setups</div>
-<div class="feature">🚫 Prevent overtrading</div>
-<div class="feature">📊 Session feedback</div>
+<div class="card">❤️ Discipline tracking</div>
+<div class="card">⚡ Trade limits</div>
+<div class="card">🏆 Progress system</div>
+<div class="card">🚫 Stop overtrading</div>
 </div>
 
 <!-- DASHBOARD -->
 <div class="dashboard">
-<h2>Live Dashboard Preview</h2>
+<h2>Live Dashboard</h2>
 
 <div class="stats">
-<div class="stat pulse">❤️ Lives: <span id="lives">3</span></div>
-<div class="stat pulse">⚡ XP: <span id="xp">0</span></div>
-<div class="stat pulse">🏆 Level: <span id="level">1</span></div>
+<div class="stat pulse">❤️ 2</div>
+<div class="stat pulse">⚡ 120</div>
+<div class="stat pulse">🏆 3</div>
 </div>
 
-<p>Session Progress</p>
 <div class="progress">
 <div class="progress-bar"></div>
 </div>
 
-<div class="trades" id="trades">
-Waiting for trades...
+<p id="trades">Win ✅ | Loss ❌</p>
+</div>
+
+<!-- CTA -->
+<a href="#" class="btn" onclick="openModal()">Get Early Access</a>
+
+<!-- PRICING -->
+<div class="pricing">
+<div class="plan">
+<h3>Free</h3>
+<p class="price">$0</p>
+<p>Basic tracking</p>
+</div>
+
+<div class="plan">
+<h3>Pro</h3>
+<p class="price">$9/mo</p>
+<p>Full system + analytics</p>
+</div>
+
+<div class="plan">
+<h3>Elite</h3>
+<p class="price">$19/mo</p>
+<p>Advanced discipline tools</p>
+</div>
 </div>
 
 </div>
 
-<div class="card">
-<h2>How it works</h2>
-<p>1. Set your rules</p>
-<p>2. Track trades instantly</p>
-<p>3. Get feedback</p>
-<p>4. Improve daily</p>
+<!-- LOGIN MODAL -->
+<div class="modal" id="modal">
+<div class="modal-content">
+<h3>Join Early Access</h3>
+<input placeholder="Email"><br>
+<button onclick="closeModal()">Submit</button>
 </div>
-
-<a href="PASTE_YOUR_GOOGLE_FORM_LINK_HERE" target="_blank" class="btn">
-Get Early Access
-</a>
-
-<p class="small">Limited early access for serious traders only.</p>
-
 </div>
 
 <script>
-let xp = 0;
-let level = 1;
-let lives = 3;
-
-function updateStats() {
-  xp += Math.floor(Math.random() * 20);
-  if (xp > 100) {
-    level++;
-    xp = 0;
-  }
-
-  document.getElementById("xp").innerText = xp;
-  document.getElementById("level").innerText = level;
+function openModal(){
+  document.getElementById("modal").style.display="flex";
+}
+function closeModal(){
+  document.getElementById("modal").style.display="none";
 }
 
-function updateTrades() {
-  const trades = ["Win ✅", "Loss ❌"];
-  const pick = trades[Math.floor(Math.random() * trades.length)];
-
-  const el = document.getElementById("trades");
-  el.innerText = pick + " | " + el.innerText;
-
-  if (el.innerText.length > 60) {
-    el.innerText = el.innerText.substring(0, 60);
-  }
-}
-
-setInterval(updateStats, 2000);
-setInterval(updateTrades, 1500);
+setInterval(()=>{
+  const trades=["Win ✅","Loss ❌"];
+  document.getElementById("trades").innerText=
+  trades[Math.floor(Math.random()*trades.length)];
+},1500);
 </script>
 
 </body>
