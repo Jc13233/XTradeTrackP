@@ -36,19 +36,16 @@ button {
   border: none;
   cursor: pointer;
   font-weight: bold;
+  transition: 0.2s;
 }
 
-.start {
-  background: linear-gradient(135deg,#4f7cff,#7c3aed);
+button:hover {
+  transform: translateY(-2px);
 }
 
-.good {
-  background: linear-gradient(135deg,#22c55e,#16a34a);
-}
-
-.bad {
-  background: linear-gradient(135deg,#ef4444,#dc2626);
-}
+.start { background: linear-gradient(135deg,#4f7cff,#7c3aed); }
+.good { background: linear-gradient(135deg,#22c55e,#16a34a); }
+.bad { background: linear-gradient(135deg,#ef4444,#dc2626); }
 
 .checklist label {
   display: block;
@@ -69,6 +66,31 @@ button {
   border-radius: 12px;
   width: 30%;
 }
+
+.progress-bar {
+  height: 10px;
+  background: #111;
+  border-radius: 10px;
+  overflow: hidden;
+  margin-top: 10px;
+}
+
+.progress-fill {
+  height: 100%;
+  width: 100%;
+  background: linear-gradient(90deg,#22c55e,#4f7cff);
+}
+
+.glow { box-shadow: 0 0 20px #22c55e; }
+.fail { box-shadow: 0 0 20px #ef4444; }
+
+.grade {
+  font-size: 40px;
+  font-weight: bold;
+  margin-top: 10px;
+}
+
+.hidden { display:none; }
 </style>
 </head>
 
@@ -77,8 +99,9 @@ button {
 <div class="container">
 
 <h1>TradeTrack</h1>
-<p style="opacity:0.6;">Build discipline. Eliminate overtrading.</p>
+<p style="opacity:0.6;">Discipline = Consistency</p>
 
+<!-- SETUP -->
 <div class="card" id="setup">
 
 <h3>Pre-Trade Checklist</h3>
@@ -90,35 +113,54 @@ button {
 <label><input type="checkbox" id="c4"> Follow system</label>
 </div>
 
-<p>Max Trades</p>
-<input id="maxTrades" type="number" value="3">
-
-<p>Max Breaks</p>
-<input id="maxBreaks" type="number" value="2">
-
 <button class="start" onclick="startSession()">Start Session</button>
 
 <p>🔥 Streak: <span id="streak">0</span></p>
 
 <a href="https://buy.stripe.com/9B628r8q61Zr0geerN6Na00" target="_blank">
-  <button class="start">Upgrade — £15/month</button>
+<button class="start">Upgrade — £15/month</button>
 </a>
 
 <p id="usageText"></p>
 
 </div>
 
-<div class="card" id="session" style="display:none;">
+<!-- SESSION -->
+<div class="card hidden" id="session">
+
 <div class="stats">
 <div class="stat">Trades<br><span id="trades">0</span></div>
 <div class="stat">Breaks<br><span id="breaks">0</span></div>
-<div class="stat">Limit<br><span id="limit">0</span></div>
+<div class="stat">Score<br><span id="score">100</span>%</div>
 </div>
 
-<button class="good" onclick="followRule()">Followed</button>
-<button class="bad" onclick="breakRule()">Broke</button>
+<div class="progress-bar">
+<div id="bar" class="progress-fill"></div>
+</div>
 
-<div id="status"></div>
+<br>
+
+<button class="good" onclick="followRule()">Followed Plan</button>
+<button class="bad" onclick="breakRule()">Broke Rule</button>
+
+<br>
+<button onclick="endSession()">End Session</button>
+
+</div>
+
+<!-- RESULT -->
+<div class="card hidden" id="result">
+
+<h2>Session Complete</h2>
+
+<div class="grade" id="grade"></div>
+
+<p id="resultText"></p>
+
+<p>🔥 Current Streak: <span id="finalStreak"></span></p>
+
+<button class="start" onclick="location.reload()">New Session</button>
+
 </div>
 
 </div>
@@ -126,14 +168,18 @@ button {
 <script>
 let plan = localStorage.getItem("plan") || "free";
 
-/* AUTO UNLOCK AFTER STRIPE */
+/* AUTO UNLOCK */
 if(window.location.search.includes("pro=true")){
   plan = "pro";
   localStorage.setItem("plan","pro");
 }
 
-/* TRIAL */
 let freeSessionsUsed = localStorage.getItem("freeSessionsUsed") || 0;
+let streak = localStorage.getItem("streak") || 0;
+
+document.getElementById("streak").innerText = streak;
+
+let trades=0, breaks=0, score=100;
 
 function updateUsageUI(){
   document.getElementById("usageText").innerText =
@@ -147,17 +193,70 @@ function startSession(){
     return;
   }
 
-  document.getElementById("setup").style.display="none";
-  document.getElementById("session").style.display="block";
+  if(!c1.checked||!c2.checked||!c3.checked||!c4.checked){
+    alert("Complete checklist");
+    return;
+  }
+
+  document.getElementById("setup").classList.add("hidden");
+  document.getElementById("session").classList.remove("hidden");
 }
 
 function followRule(){
-  document.getElementById("trades").innerText++;
+  trades++;
+  updateScore();
 }
 
 function breakRule(){
-  document.getElementById("trades").innerText++;
-  document.getElementById("breaks").innerText++;
+  trades++;
+  breaks++;
+  score -= 25;
+  updateScore();
+}
+
+function updateScore(){
+  document.getElementById("trades").innerText = trades;
+  document.getElementById("breaks").innerText = breaks;
+  document.getElementById("score").innerText = score;
+
+  let bar = document.getElementById("bar");
+  bar.style.width = score+"%";
+
+  if(score >= 75){
+    bar.classList.add("glow");
+  } else {
+    bar.classList.remove("glow");
+  }
+
+  if(score <= 50){
+    bar.classList.add("fail");
+  }
+}
+
+function endSession(){
+
+  if(plan==="free"){
+    freeSessionsUsed++;
+    localStorage.setItem("freeSessionsUsed", freeSessionsUsed);
+  }
+
+  let grade = "D";
+  let text = "Discipline needs work.";
+
+  if(score >= 90){ grade="A"; text="Elite discipline."; }
+  else if(score >= 75){ grade="B"; text="Solid control."; }
+  else if(score >= 50){ grade="C"; text="Needs tightening."; }
+
+  if(score >= 75){ streak++; } else { streak=0; }
+
+  localStorage.setItem("streak", streak);
+
+  document.getElementById("session").classList.add("hidden");
+  document.getElementById("result").classList.remove("hidden");
+
+  document.getElementById("grade").innerText = grade;
+  document.getElementById("resultText").innerText = text;
+  document.getElementById("finalStreak").innerText = streak;
 }
 
 updateUsageUI();
