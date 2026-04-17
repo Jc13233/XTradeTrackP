@@ -96,15 +96,23 @@ button {
 <input id="maxBreaks" type="number" value="2">
 
 <br>
+<button class="start" onclick="startSession()">Start</button>
+
+<p>🔥 Streak: <span id="streak">0</span></p>
+
+<!-- STRIPE BUTTON -->
 <a href="https://buy.stripe.com/9B628r8q61Zr0geerN6Na00" target="_blank">
   <button class="start">Upgrade to Pro</button>
 </a>
 
-<br>
+<p style="opacity:0.7; font-size:14px;">
+Unlock unlimited sessions, full history, and streak tracking.
+</p>
 
 <button onclick="unlockPro()">I Paid – Unlock</button>
 
-<p>🔥 Streak: <span id="streak">0</span></p>
+<p id="planText">Current Plan: Free</p>
+<p id="usageText"></p>
 </div>
 
 <!-- SESSION -->
@@ -136,13 +144,14 @@ button {
 let trades=0, breaks=0, maxTrades=0, maxBreaks=0;
 let locked=false;
 
-/* PLAN SYSTEM */
+/* PLAN + USAGE */
 let plan = localStorage.getItem("plan") || "free";
+let freeSessionsUsed = localStorage.getItem("freeSessionsUsed") || 0;
 
 /* STREAK */
 let streak = localStorage.getItem("streak") || 0;
 
-/* UI INIT */
+/* INIT UI */
 document.getElementById("planText").innerText =
   "Current Plan: " + (plan === "pro" ? "Pro" : "Free");
 
@@ -150,6 +159,17 @@ if(plan === "pro"){
   document.getElementById("streak").innerText = streak;
 } else {
   document.getElementById("streak").innerText = "🔒";
+}
+
+/* USAGE UI */
+function updateUsageUI(){
+  if(plan === "free"){
+    let remaining = 5 - freeSessionsUsed;
+    document.getElementById("usageText").innerText =
+      "Free sessions left: " + remaining;
+  } else {
+    document.getElementById("usageText").innerText = "";
+  }
 }
 
 /* DAILY LOCK */
@@ -160,6 +180,12 @@ function isLockedToday(){
 }
 
 function startSession(){
+
+  if(plan === "free" && freeSessionsUsed >= 5){
+    alert("You've reached your free limit.\n\nUpgrade to TradeTrack Pro to continue building discipline.");
+    return;
+  }
+
   if(isLockedToday()){
     alert("You are locked for today.");
     return;
@@ -207,10 +233,14 @@ function lock(){
   let score = Math.max(0,100-(breaks*25));
 
   status.innerHTML = "<div class='locked'>SESSION LOCKED — DONE FOR TODAY</div>";
-
   report.innerHTML = "<p>Score: "+score+"%</p>";
 
   localStorage.setItem("lockDate", new Date().toDateString());
+
+  if(plan === "free"){
+    freeSessionsUsed++;
+    localStorage.setItem("freeSessionsUsed", freeSessionsUsed);
+  }
 
   if(score >= 75){
     streak++;
@@ -226,6 +256,7 @@ function lock(){
 
   saveSession(score);
   loadHistory();
+  updateUsageUI();
 }
 
 /* SAVE SESSION */
@@ -264,7 +295,7 @@ function loadHistory(){
   }
 }
 
-/* UPGRADE */
+/* UNLOCK AFTER PAYMENT */
 function unlockPro(){
   plan = "pro";
   localStorage.setItem("plan","pro");
@@ -300,6 +331,7 @@ const c4=document.getElementById("c4");
 
 /* INIT */
 loadHistory();
+updateUsageUI();
 
 if(isLockedToday()){
   status.innerHTML = "<div class='locked'>You are locked for today.</div>";
