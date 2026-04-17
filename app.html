@@ -91,6 +91,12 @@ button:hover {
 }
 
 .hidden { display:none; }
+
+.plan-box {
+  margin-top: 10px;
+  font-size: 14px;
+  opacity: 0.8;
+}
 </style>
 </head>
 
@@ -117,8 +123,13 @@ button:hover {
 
 <p>🔥 Streak: <span id="streak">0</span></p>
 
-<a href="https://buy.stripe.com/9B628r8q61Zr0geerN6Na00" target="_blank">
-<button class="start">Upgrade — £15/month</button>
+<div class="plan-box" id="planText">
+Plan: Free Trial
+</div>
+
+<!-- NEW STRIPE LINK -->
+<a href="https://buy.stripe.com/aFa8wP0XEfQhfb81F16Na01" target="_blank">
+<button class="start">Upgrade to Pro — £15/month</button>
 </a>
 
 <p id="usageText"></p>
@@ -174,6 +185,11 @@ if(window.location.search.includes("pro=true")){
   localStorage.setItem("plan","pro");
 }
 
+/* PLAN TEXT */
+document.getElementById("planText").innerText =
+  plan === "pro" ? "Plan: Pro (£15/month)" : "Plan: Free Trial";
+
+/* DATA */
 let freeSessionsUsed = localStorage.getItem("freeSessionsUsed") || 0;
 let streak = localStorage.getItem("streak") || 0;
 
@@ -181,15 +197,19 @@ document.getElementById("streak").innerText = streak;
 
 let trades=0, breaks=0, score=100;
 
+/* USAGE */
 function updateUsageUI(){
   document.getElementById("usageText").innerText =
-    plan==="free" ? "Free sessions left: "+(5-freeSessionsUsed) : "Unlimited access";
+    plan==="free"
+      ? "Free sessions left: "+(5-freeSessionsUsed)
+      : "Unlimited access unlocked";
 }
 
+/* START */
 function startSession(){
 
   if(plan==="free" && freeSessionsUsed>=5){
-    alert("Upgrade required.");
+    alert("Upgrade to Pro (£15/month) to continue.");
     return;
   }
 
@@ -202,6 +222,7 @@ function startSession(){
   document.getElementById("session").classList.remove("hidden");
 }
 
+/* ACTIONS */
 function followRule(){
   trades++;
   updateScore();
@@ -214,6 +235,7 @@ function breakRule(){
   updateScore();
 }
 
+/* SCORE */
 function updateScore(){
   document.getElementById("trades").innerText = trades;
   document.getElementById("breaks").innerText = breaks;
@@ -222,17 +244,11 @@ function updateScore(){
   let bar = document.getElementById("bar");
   bar.style.width = score+"%";
 
-  if(score >= 75){
-    bar.classList.add("glow");
-  } else {
-    bar.classList.remove("glow");
-  }
-
-  if(score <= 50){
-    bar.classList.add("fail");
-  }
+  bar.classList.toggle("glow", score >= 75);
+  bar.classList.toggle("fail", score <= 50);
 }
 
+/* END */
 function endSession(){
 
   if(plan==="free"){
