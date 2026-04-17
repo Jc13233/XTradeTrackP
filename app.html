@@ -67,11 +67,6 @@ button {
   font-size: 20px;
 }
 
-.cooldown {
-  color: orange;
-  margin-top: 10px;
-}
-
 .history {
   margin-top: 20px;
   text-align: left;
@@ -104,6 +99,9 @@ button {
 <button class="start" onclick="startSession()">Start</button>
 
 <p>🔥 Streak: <span id="streak">0</span></p>
+
+<button onclick="upgrade()">Upgrade to Pro</button>
+<p id="planText">Current Plan: Free</p>
 </div>
 
 <!-- SESSION -->
@@ -119,12 +117,12 @@ button {
 <button class="bad" onclick="breakRule()">Broke</button>
 
 <div id="status"></div>
-<div id="cooldown"></div>
 <div id="report"></div>
 
 <div class="history">
 <h3>Session History</h3>
 <div id="history"></div>
+<p id="upgradeMsg"></p>
 </div>
 
 </div>
@@ -134,11 +132,24 @@ button {
 <script>
 let trades=0, breaks=0, maxTrades=0, maxBreaks=0;
 let locked=false;
+
+/* PLAN SYSTEM */
+let plan = localStorage.getItem("plan") || "free";
+
+/* STREAK */
 let streak = localStorage.getItem("streak") || 0;
 
-document.getElementById("streak").innerText = streak;
+/* UI INIT */
+document.getElementById("planText").innerText =
+  "Current Plan: " + (plan === "pro" ? "Pro" : "Free");
 
-/* DAILY LOCK CHECK */
+if(plan === "pro"){
+  document.getElementById("streak").innerText = streak;
+} else {
+  document.getElementById("streak").innerText = "🔒";
+}
+
+/* DAILY LOCK */
 function isLockedToday(){
   let lockDate = localStorage.getItem("lockDate");
   let today = new Date().toDateString();
@@ -194,13 +205,10 @@ function lock(){
 
   status.innerHTML = "<div class='locked'>SESSION LOCKED — DONE FOR TODAY</div>";
 
-  report.innerHTML =
-    "<p>Score: "+score+"%</p>";
+  report.innerHTML = "<p>Score: "+score+"%</p>";
 
-  /* SAVE DAILY LOCK */
   localStorage.setItem("lockDate", new Date().toDateString());
 
-  /* STREAK */
   if(score >= 75){
     streak++;
   } else {
@@ -208,7 +216,10 @@ function lock(){
   }
 
   localStorage.setItem("streak", streak);
-  document.getElementById("streak").innerText = streak;
+
+  if(plan === "pro"){
+    document.getElementById("streak").innerText = streak;
+  }
 
   saveSession(score);
   loadHistory();
@@ -232,6 +243,10 @@ function saveSession(score){
 function loadHistory(){
   let history = JSON.parse(localStorage.getItem("history")) || [];
 
+  if(plan === "free"){
+    history = history.slice(-3);
+  }
+
   let html = "";
 
   history.slice().reverse().forEach(s=>{
@@ -239,6 +254,20 @@ function loadHistory(){
   });
 
   document.getElementById("history").innerHTML = html;
+
+  if(plan === "free"){
+    document.getElementById("upgradeMsg").innerText =
+      "Upgrade to Pro to unlock full history & streak tracking.";
+  }
+}
+
+/* UPGRADE */
+function upgrade(){
+  plan = "pro";
+  localStorage.setItem("plan","pro");
+  document.getElementById("planText").innerText = "Current Plan: Pro";
+  document.getElementById("streak").innerText = streak;
+  loadHistory();
 }
 
 function update(){
@@ -261,12 +290,11 @@ const c2=document.getElementById("c2");
 const c3=document.getElementById("c3");
 const c4=document.getElementById("c4");
 
-/* LOAD HISTORY ON START */
+/* INIT */
 loadHistory();
 
-/* CHECK DAILY LOCK ON LOAD */
 if(isLockedToday()){
-  status.innerHTML = "<div class='locked'>You are locked for today. Come back tomorrow.</div>";
+  status.innerHTML = "<div class='locked'>You are locked for today.</div>";
 }
 </script>
 
