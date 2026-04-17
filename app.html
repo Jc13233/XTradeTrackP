@@ -96,7 +96,13 @@ button {
 <input id="maxBreaks" type="number" value="2">
 
 <br>
-<button class="start" onclick="startSession()">Start</button>
+<a href="YOUR_STRIPE_LINK" target="_blank">
+  <button class="start">Upgrade to Pro</button>
+</a>
+
+<br>
+
+<button onclick="unlockPro()">I Paid – Unlock</button>
 
 <p>🔥 Streak: <span id="streak">0</span></p>
 
@@ -262,12 +268,17 @@ function loadHistory(){
 }
 
 /* UPGRADE */
-function upgrade(){
+function unlockPro(){
   plan = "pro";
   localStorage.setItem("plan","pro");
+
   document.getElementById("planText").innerText = "Current Plan: Pro";
   document.getElementById("streak").innerText = streak;
+
   loadHistory();
+  updateUsageUI();
+
+  alert("Pro unlocked. You're good.");
 }
 
 function update(){
