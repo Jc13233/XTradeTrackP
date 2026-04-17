@@ -13,7 +13,6 @@ body {
   color: white;
 }
 
-/* Layout */
 .container {
   max-width: 700px;
   margin: auto;
@@ -21,17 +20,14 @@ body {
   text-align: center;
 }
 
-/* Title */
 h1 {
   font-size: 36px;
-  margin-bottom: 10px;
 }
 
 p {
   color: #9ca3af;
 }
 
-/* Glass card */
 .card {
   background: rgba(255,255,255,0.05);
   backdrop-filter: blur(12px);
@@ -41,7 +37,6 @@ p {
   border: 1px solid rgba(255,255,255,0.08);
 }
 
-/* Inputs */
 input {
   padding: 12px;
   margin: 10px;
@@ -53,7 +48,6 @@ input {
   text-align: center;
 }
 
-/* Buttons */
 button {
   padding: 14px 22px;
   margin: 10px;
@@ -64,7 +58,6 @@ button {
   transition: 0.2s;
 }
 
-/* Button styles */
 .start {
   background: linear-gradient(135deg,#4f7cff,#7c3aed);
   color: white;
@@ -83,7 +76,6 @@ button:hover {
   transform: scale(1.05);
 }
 
-/* Stats */
 .stats {
   display: flex;
   justify-content: space-around;
@@ -97,7 +89,6 @@ button:hover {
   width: 30%;
 }
 
-/* Status */
 .locked {
   color: #ef4444;
   font-size: 20px;
@@ -105,7 +96,6 @@ button:hover {
   font-weight: bold;
 }
 
-/* Glow warning */
 .warning {
   color: #f59e0b;
   margin-top: 10px;
@@ -123,6 +113,12 @@ button:hover {
 <!-- SETUP -->
 <div class="card" id="setup">
 <h3>Set Your Session Rules</h3>
+
+<h4>Pre-Trade Checklist</h4>
+<label><input type="checkbox" id="c1"> I have a clear setup</label><br>
+<label><input type="checkbox" id="c2"> Risk is defined</label><br>
+<label><input type="checkbox" id="c3"> No revenge trading</label><br>
+<label><input type="checkbox" id="c4"> Following my strategy</label><br>
 
 <p>Max Trades</p>
 <input id="maxTrades" type="number" value="3">
@@ -153,6 +149,7 @@ button:hover {
 <button class="bad" onclick="breakRule()">Broke Rules</button>
 
 <div id="status"></div>
+<div id="report" style="margin-top:20px;"></div>
 
 </div>
 
@@ -166,6 +163,16 @@ let maxBreaks = 0;
 let locked = false;
 
 function startSession() {
+  if (
+    !document.getElementById("c1").checked ||
+    !document.getElementById("c2").checked ||
+    !document.getElementById("c3").checked ||
+    !document.getElementById("c4").checked
+  ) {
+    alert("Complete checklist before starting.");
+    return;
+  }
+
   maxTrades = parseInt(document.getElementById("maxTrades").value);
   maxBreaks = parseInt(document.getElementById("maxBreaks").value);
 
@@ -211,8 +218,16 @@ function checkLimits() {
 function lockSession(reason) {
   locked = true;
 
+  let score = Math.max(0, 100 - (breaks * 25));
+
   document.getElementById("status").innerHTML =
     "<div class='locked'>SESSION LOCKED</div><div class='warning'>" + reason + "</div>";
+
+  document.getElementById("report").innerHTML =
+    "<div class='card'><h3>Session Report</h3>" +
+    "<p>Trades: " + trades + "</p>" +
+    "<p>Rule Breaks: " + breaks + "</p>" +
+    "<p>Discipline Score: " + score + "%</p></div>";
 }
 
 function update() {
