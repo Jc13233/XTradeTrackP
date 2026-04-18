@@ -71,6 +71,20 @@ select, textarea {
 
 .upgrade { text-align:center; color:#a78bfa; }
 
+canvas {
+  margin-top:10px;
+  background:#020617;
+  border-radius:10px;
+}
+
+.entry {
+  text-align:left;
+  margin-top:10px;
+  padding:10px;
+  background:rgba(255,255,255,0.05);
+  border-radius:10px;
+}
+
 .hidden { display:none; }
 </style>
 </head>
@@ -114,7 +128,6 @@ select, textarea {
 <div class="card hidden" id="session">
 
 <p>Score: <span id="score">100</span>%</p>
-
 <div id="warning" class="warning"></div>
 
 <button class="good" id="goodBtn">Good</button>
@@ -147,16 +160,25 @@ select, textarea {
 
 </div>
 
-<!-- BADGES -->
+<!-- CHART -->
 <div class="card">
-
-<h3>Achievements</h3>
-<div id="badges"></div>
-
-<div id="badgeLock" class="upgrade hidden">
-Upgrade to Pro to unlock achievements
+<h3>Performance Chart</h3>
+<canvas id="chart" width="300" height="150"></canvas>
+<div id="chartLock" class="upgrade hidden">Upgrade to Pro to view chart</div>
 </div>
 
+<!-- JOURNAL -->
+<div class="card">
+<h3>Journal</h3>
+<div id="journalContent"></div>
+<div id="journalLock" class="upgrade hidden">Upgrade to Pro to view journal</div>
+</div>
+
+<!-- BADGES -->
+<div class="card">
+<h3>Achievements</h3>
+<div id="badges"></div>
+<div id="badgeLock" class="upgrade hidden">Upgrade to Pro to unlock achievements</div>
 </div>
 
 </div>
@@ -195,6 +217,12 @@ const badgeEarned = document.getElementById("badgeEarned");
 
 const badgesDiv = document.getElementById("badges");
 const badgeLock = document.getElementById("badgeLock");
+
+const chart = document.getElementById("chart");
+const chartLock = document.getElementById("chartLock");
+
+const journalContent = document.getElementById("journalContent");
+const journalLock = document.getElementById("journalLock");
 
 /* INIT */
 document.getElementById("usage").innerText =
@@ -320,37 +348,67 @@ function endSession(){
   let grade = score>=90?"A":score>=75?"B":score>=50?"C":"D";
   document.getElementById("grade").innerText = grade;
 
-  let passed = false;
-  if(goal==="80") passed = score>=80;
-  else passed = reasons.length <= parseInt(goal);
-
+  let passed = goal==="80" ? score>=80 : reasons.length <= parseInt(goal);
   goalResult.innerText = passed ? "✅ Goal achieved" : "❌ Goal failed";
-  goalResult.className = passed ? "success" : "fail";
 
   let earned = [];
-
-  if(score >= 90) earned.push("🥇 Disciplined Trader");
-  if(reasons.length === 0) earned.push("🧊 Cold Blooded");
-  if(streak >= 3) earned.push("🔥 3 Day Streak");
+  if(score >= 90) earned.push("🥇 Disciplined");
+  if(reasons.length === 0) earned.push("🧊 Clean");
+  if(streak >= 3) earned.push("🔥 Streak");
 
   badgeEarned.innerText = earned.length ? "Unlocked: " + earned.join(", ") : "";
 }
 
 /* SAVE NOTE */
-document.getElementById("saveNoteBtn").onclick = () => {
-
-  let note = document.getElementById("notes").value;
-
-  history[history.length-1].note = note;
-
-  if(note){
-    badgeEarned.innerText += " | 🧠 Self Aware";
-  }
-
+saveNoteBtn.onclick = () => {
+  history[history.length-1].note = notes.value;
   localStorage.setItem("history", JSON.stringify(history));
-
   location.reload();
 };
+
+/* CHART */
+function drawChart(){
+  if(plan==="free"){
+    chart.style.display="none";
+    chartLock.classList.remove("hidden");
+    return;
+  }
+
+  let ctx = chart.getContext("2d");
+  let data = history.slice(-7).map(h=>h.score);
+
+  ctx.beginPath();
+  data.forEach((v,i)=>{
+    let x = i*40 + 10;
+    let y = 150 - v;
+    if(i===0) ctx.moveTo(x,y);
+    else ctx.lineTo(x,y);
+  });
+  ctx.strokeStyle="#7c3aed";
+  ctx.stroke();
+}
+drawChart();
+
+/* JOURNAL */
+function loadJournal(){
+  if(plan==="free"){
+    journalContent.style.display="none";
+    journalLock.classList.remove("hidden");
+    return;
+  }
+
+  journalContent.innerHTML="";
+  history.slice().reverse().forEach(h=>{
+    journalContent.innerHTML += `
+      <div class="entry">
+        <strong>${h.score}%</strong><br>
+        ${(h.reasons||[]).join(", ")}<br>
+        ${h.note || "-"}
+      </div>
+    `;
+  });
+}
+loadJournal();
 
 /* BADGES */
 function loadBadges(){
@@ -361,29 +419,21 @@ function loadBadges(){
     return;
   }
 
-  let unlocked = {
-    disciplined:false,
-    streak:false,
-    clean:false,
-    aware:false
-  };
+  let unlocked = {disc:false, streak:false, clean:false};
 
   history.forEach(h=>{
-    if(h.score>=90) unlocked.disciplined=true;
+    if(h.score>=90) unlocked.disc=true;
     if((h.reasons||[]).length===0) unlocked.clean=true;
-    if(h.note) unlocked.aware=true;
   });
 
   if(streak>=3) unlocked.streak=true;
 
   badgesDiv.innerHTML = `
-    <div class="badge ${unlocked.disciplined?'':'locked'}">🥇 Disciplined</div>
+    <div class="badge ${unlocked.disc?'':'locked'}">🥇 Disciplined</div>
     <div class="badge ${unlocked.streak?'':'locked'}">🔥 Streak</div>
     <div class="badge ${unlocked.clean?'':'locked'}">🧊 Clean</div>
-    <div class="badge ${unlocked.aware?'':'locked'}">🧠 Aware</div>
   `;
 }
-
 loadBadges();
 
 </script>
