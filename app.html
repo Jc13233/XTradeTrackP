@@ -42,12 +42,10 @@ button {
 
 .hidden { display:none; }
 
-textarea {
-  width:100%;
-  height:100px;
+canvas {
+  margin-top:15px;
+  background:#020617;
   border-radius:10px;
-  border:none;
-  padding:10px;
 }
 
 .entry {
@@ -56,10 +54,6 @@ textarea {
   padding:10px;
   background:rgba(255,255,255,0.05);
   border-radius:10px;
-}
-
-.stat {
-  margin-top:10px;
 }
 
 .upgrade { color:#a78bfa; }
@@ -72,6 +66,7 @@ textarea {
 
 <h1>TradeTrack</h1>
 
+<!-- SETUP -->
 <div class="card" id="setup">
 
 <h3>Checklist</h3>
@@ -94,10 +89,9 @@ textarea {
 
 </div>
 
+<!-- SESSION -->
 <div class="card hidden" id="session">
 
-<p>Trades: <span id="trades">0</span></p>
-<p>Mistakes: <span id="breaks">0</span></p>
 <p>Score: <span id="score">100</span>%</p>
 
 <button class="good" id="goodBtn">Good</button>
@@ -117,28 +111,28 @@ textarea {
 
 </div>
 
+<!-- RESULT -->
 <div class="card hidden" id="result">
 
 <h2 id="resultTitle"></h2>
 <h1 id="grade"></h1>
 
-<h3>Notes</h3>
-<textarea id="notes"></textarea>
+<textarea id="notes" placeholder="Session notes..."></textarea>
 
 <br>
 <button id="saveNoteBtn">Save</button>
 
 </div>
 
-<!-- WEEKLY STATS -->
+<!-- CHART -->
 <div class="card">
 
-<h3>Weekly Performance (Pro)</h3>
+<h3>Performance Chart (Pro)</h3>
 
-<div id="statsContent"></div>
+<canvas id="chart" width="300" height="150"></canvas>
 
-<div id="statsLock" class="upgrade hidden">
-Upgrade to Pro to view stats
+<div id="chartLock" class="upgrade hidden">
+Upgrade to Pro to view chart
 </div>
 
 </div>
@@ -146,12 +140,12 @@ Upgrade to Pro to view stats
 <!-- JOURNAL -->
 <div class="card">
 
-<h3>Session Journal (Pro)</h3>
+<h3>Journal (Pro)</h3>
 
 <div id="journalContent"></div>
 
 <div id="journalLock" class="upgrade hidden">
-Upgrade to Pro to view your journal
+Upgrade to Pro to view journal
 </div>
 
 </div>
@@ -177,23 +171,22 @@ let level = +localStorage.getItem("level") || 1;
 
 /* ELEMENTS */
 const startBtn = document.getElementById("startBtn");
-const goodBtn = document.getElementById("goodBtn");
-const badBtn = document.getElementById("badBtn");
-const endBtn = document.getElementById("endBtn");
-
-const setup = document.getElementById("setup");
 const session = document.getElementById("session");
+const setup = document.getElementById("setup");
 const result = document.getElementById("result");
+
+const scoreEl = document.getElementById("score");
 
 const notesInput = document.getElementById("notes");
 const saveNoteBtn = document.getElementById("saveNoteBtn");
 
-const statsContent = document.getElementById("statsContent");
-const statsLock = document.getElementById("statsLock");
+const chart = document.getElementById("chart");
+const chartLock = document.getElementById("chartLock");
 
 const journalContent = document.getElementById("journalContent");
 const journalLock = document.getElementById("journalLock");
 
+/* UI INIT */
 document.getElementById("usage").innerText =
   plan==="free"
   ? "Free sessions left: " + (5-freeUsed)
@@ -204,7 +197,7 @@ document.getElementById("xp").innerText = xp;
 document.getElementById("level").innerText = level;
 
 /* SESSION */
-let trades=0, breaks=0, score=100;
+let score = 100;
 let reasons=[];
 
 startBtn.onclick = () => {
@@ -223,13 +216,14 @@ startBtn.onclick = () => {
   session.classList.remove("hidden");
 };
 
-goodBtn.onclick = () => { trades++; };
+goodBtn.onclick = () => {};
 
 badBtn.onclick = () => {
   let r = reason.value;
   if(!r){ alert("Pick reason"); return; }
-  trades++; breaks++; score -= 25;
+  score -= 25;
   reasons.push(r);
+  scoreEl.innerText = score;
 };
 
 endBtn.onclick = () => {
@@ -257,7 +251,7 @@ endBtn.onclick = () => {
     score:score,
     reasons:reasons,
     note:"",
-    date: Date.now()
+    date:Date.now()
   });
 
   localStorage.setItem("history", JSON.stringify(history));
@@ -266,57 +260,41 @@ endBtn.onclick = () => {
   result.classList.remove("hidden");
 };
 
-/* SAVE NOTE */
 saveNoteBtn.onclick = () => {
   history[history.length-1].note = notesInput.value;
   localStorage.setItem("history", JSON.stringify(history));
   location.reload();
 };
 
-/* WEEKLY STATS */
-function loadStats(){
+/* CHART */
+function drawChart(){
 
   if(plan==="free"){
-    statsContent.style.display="none";
-    statsLock.classList.remove("hidden");
+    chart.style.display="none";
+    chartLock.classList.remove("hidden");
     return;
   }
 
-  let weekAgo = Date.now() - (7*24*60*60*1000);
+  let ctx = chart.getContext("2d");
 
-  let weekData = history.filter(h => h.date > weekAgo);
+  let data = history.slice(-7).map(h=>h.score);
 
-  if(weekData.length === 0){
-    statsContent.innerHTML = "No data yet.";
-    return;
-  }
+  ctx.clearRect(0,0,300,150);
 
-  let totalScore = 0;
-  let totalMistakes = 0;
-
-  weekData.forEach(h=>{
-    totalScore += h.score;
-    totalMistakes += (h.reasons||[]).length;
+  ctx.beginPath();
+  data.forEach((val,i)=>{
+    let x = i * 40 + 10;
+    let y = 150 - val;
+    if(i===0) ctx.moveTo(x,y);
+    else ctx.lineTo(x,y);
   });
 
-  let avgScore = Math.round(totalScore / weekData.length);
-
-  let trend = "No trend";
-  if(weekData.length >= 2){
-    let first = weekData[0].score;
-    let last = weekData.at(-1).score;
-    trend = last > first ? "Improving" : last < first ? "Declining" : "Stable";
-  }
-
-  statsContent.innerHTML = `
-    <div class="stat">📊 Sessions: ${weekData.length}</div>
-    <div class="stat">📈 Avg Score: ${avgScore}%</div>
-    <div class="stat">⚠️ Mistakes: ${totalMistakes}</div>
-    <div class="stat">📉 Trend: ${trend}</div>
-  `;
+  ctx.strokeStyle="#7c3aed";
+  ctx.lineWidth=2;
+  ctx.stroke();
 }
 
-loadStats();
+drawChart();
 
 /* JOURNAL */
 function loadJournal(){
@@ -332,9 +310,9 @@ function loadJournal(){
   history.slice().reverse().forEach(h=>{
     journalContent.innerHTML += `
       <div class="entry">
-        <strong>Score:</strong> ${h.score}%<br>
-        <strong>Mistakes:</strong> ${(h.reasons||[]).join(", ") || "None"}<br>
-        <strong>Note:</strong> ${h.note || "-"}
+        <strong>${h.score}%</strong><br>
+        ${(h.reasons||[]).join(", ")}<br>
+        ${h.note || "-"}
       </div>
     `;
   });
