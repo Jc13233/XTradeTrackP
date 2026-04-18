@@ -9,55 +9,77 @@
 body {
   margin:0;
   font-family: Inter, system-ui;
-  background: radial-gradient(circle at top,#1e293b,#020617);
+  background:#020617;
   color:#e2e8f0;
 }
 
+/* NAV */
+.nav {
+  display:flex;
+  justify-content:center;
+  gap:20px;
+  padding:20px;
+  border-bottom:1px solid rgba(255,255,255,0.1);
+}
+
+.nav button {
+  background:none;
+  color:#94a3b8;
+  border:none;
+  font-size:16px;
+  cursor:pointer;
+  transition:0.2s;
+}
+
+.nav button.active {
+  color:#a78bfa;
+  transform:scale(1.05);
+}
+
+/* CONTAINER */
 .container {
-  max-width:800px;
+  max-width:700px;
   margin:auto;
-  padding:40px 20px;
+  padding:20px;
 }
 
+/* CARD */
 .card {
-  background: rgba(255,255,255,0.05);
+  background:rgba(255,255,255,0.05);
   border:1px solid rgba(255,255,255,0.08);
-  padding:25px;
+  border-radius:16px;
+  padding:20px;
   margin-top:20px;
-  border-radius:18px;
+  transition:0.25s;
 }
 
+.card:hover {
+  transform:translateY(-4px);
+}
+
+/* BUTTONS */
 button {
   padding:10px 16px;
-  margin:5px;
   border:none;
-  border-radius:8px;
-  cursor:pointer;
-}
-
-.start { background:#7c3aed; color:white; }
-.good { background:#22c55e; }
-.bad { background:#ef4444; }
-
-.entry {
-  margin-top:12px;
-  padding:12px;
-  background:rgba(255,255,255,0.05);
   border-radius:10px;
+  cursor:pointer;
+  transition:0.2s;
 }
 
-.small { font-size:12px; color:#94a3b8; }
-
-.pattern {
-  padding:10px;
-  margin-top:10px;
-  border-left:4px solid #7c3aed;
-  background:rgba(124,58,237,0.1);
-  border-radius:8px;
+button:hover {
+  transform:translateY(-2px);
 }
 
+button:active {
+  transform:scale(0.96);
+}
+
+.primary { background:#7c3aed; color:white; }
+.bad { background:#ef4444; color:white; }
+
+/* PROGRESS */
 .progress {
-  height:10px;
+  height:8px;
   background:#020617;
   border-radius:10px;
   margin-top:10px;
@@ -66,7 +88,36 @@ button {
 .bar {
   height:100%;
   background:#7c3aed;
+  transition:width 0.4s ease;
 }
+
+/* FADE */
+.fade {
+  animation:fade 0.3s ease;
+}
+
+@keyframes fade {
+  from {opacity:0; transform:translateY(10px);}
+  to {opacity:1; transform:translateY(0);}
+}
+
+/* ENTRY */
+.entry {
+  padding:12px;
+  margin-top:10px;
+  background:rgba(255,255,255,0.05);
+  border-radius:10px;
+}
+
+.insight {
+  padding:10px;
+  margin-top:10px;
+  border-left:3px solid #7c3aed;
+  background:rgba(124,58,237,0.1);
+  border-radius:8px;
+}
+
+.small { color:#94a3b8; font-size:13px; }
 
 .hidden { display:none; }
 </style>
@@ -74,43 +125,21 @@ button {
 
 <body>
 
+<!-- NAV -->
+<div class="nav">
+  <button onclick="showTab('dash')" class="active" id="tabDash">Dashboard</button>
+  <button onclick="showTab('journal')" id="tabJournal">Journal</button>
+  <button onclick="showTab('insights')" id="tabInsights">Insights</button>
+</div>
+
 <div class="container">
 
-<h1>TradeTrack</h1>
+<!-- DASH -->
+<div id="dash" class="fade">
 
-<!-- STATS -->
 <div class="card">
-<p>🔥 Streak: <span id="streak">0</span></p>
-<p>⭐ Level: <span id="level">1</span></p>
-<div class="progress"><div id="xpBar" class="bar"></div></div>
-<p id="usage"></p>
-</div>
-
-<!-- WEEKLY -->
-<div class="card">
-<h3>Weekly Performance</h3>
-<p id="weeklyStats"></p>
-<p id="comparison"></p>
-</div>
-
-<!-- INSIGHTS -->
-<div class="card">
-<h3>Insights</h3>
-<div id="insights"></div>
-</div>
-
-<!-- SETUP -->
-<div class="card" id="setup">
-<button class="start" id="startBtn">Start Session</button>
-
-<a href="https://buy.stripe.com/aFa8wP0XEfQhfb81F16Na01" target="_blank">
-<button class="start">Upgrade to Pro</button>
-</a>
-</div>
-
-<!-- SESSION -->
-<div class="card hidden" id="session">
-<p>Score: <span id="score">100</span>%</p>
+<h2>Session</h2>
+<p id="scoreWrap">Score: <span id="score">100</span>%</p>
 
 <select id="reason">
 <option value="">Why break?</option>
@@ -120,95 +149,126 @@ button {
 <option>Impulse</option>
 </select>
 
-<button class="bad" id="badBtn">Bad</button>
-<button id="endBtn">End Session</button>
+<button class="bad" onclick="bad()">Mistake</button>
+<button onclick="endSession()">End Session</button>
 </div>
 
-<!-- RESULT -->
-<div class="card hidden" id="result">
-<h2 id="grade"></h2>
-<textarea id="notes" placeholder="What went wrong?"></textarea>
-<button id="saveNoteBtn">Save Journal</button>
-</div>
-
-<!-- JOURNAL INSIGHTS -->
 <div class="card">
-<h3>Journal Patterns</h3>
-<div id="patterns"></div>
+<h3>Stats</h3>
+<p>🔥 Streak: <span id="streak">0</span></p>
+<p>⭐ Level: <span id="level">1</span></p>
+<div class="progress"><div id="xpBar" class="bar"></div></div>
+</div>
+
+<div class="card">
+<button class="primary" onclick="startSession()">Start Session</button>
+
+<a href="https://buy.stripe.com/aFa8wP0XEfQhfb81F16Na01" target="_blank">
+<button class="primary">Upgrade</button>
+</a>
+
+<p id="usage"></p>
+</div>
+
 </div>
 
 <!-- JOURNAL -->
+<div id="journal" class="hidden">
 <div class="card">
-<h3>Journal</h3>
+<h2>Journal</h2>
 
-<button onclick="filterJournal('all')">All</button>
-<button onclick="filterJournal('good')">Good</button>
-<button onclick="filterJournal('bad')">Bad</button>
+<button onclick="filter('all')">All</button>
+<button onclick="filter('good')">Good</button>
+<button onclick="filter('bad')">Bad</button>
 
-<div id="journalContent"></div>
+<div id="journalList"></div>
+</div>
+</div>
+
+<!-- INSIGHTS -->
+<div id="insights" class="hidden">
+<div class="card">
+<h2>Insights</h2>
+<div id="insightBox"></div>
+</div>
+
+<div class="card">
+<h3>Weekly</h3>
+<p id="weekly"></p>
+</div>
 </div>
 
 </div>
 
 <script>
 
-/* PLAN */
-let plan = localStorage.getItem("plan") || "free";
-let freeUsed = +localStorage.getItem("freeUsed") || 0;
+/* TAB */
+function showTab(tab){
+  ["dash","journal","insights"].forEach(id=>{
+    document.getElementById(id).classList.add("hidden");
+    document.getElementById("tab"+id.charAt(0).toUpperCase()+id.slice(1)).classList.remove("active");
+  });
+
+  let el = document.getElementById(tab);
+  el.classList.remove("hidden");
+  el.classList.add("fade");
+
+  document.getElementById("tab"+tab.charAt(0).toUpperCase()+tab.slice(1)).classList.add("active");
+}
 
 /* DATA */
-let history = JSON.parse(localStorage.getItem("history") || "[]");
-let streak = +localStorage.getItem("streak") || 0;
-let xp = +localStorage.getItem("xp") || 0;
-let level = +localStorage.getItem("level") || 1;
+let history = JSON.parse(localStorage.getItem("history")||"[]");
+let streak = +localStorage.getItem("streak")||0;
+let xp = +localStorage.getItem("xp")||0;
+let level = +localStorage.getItem("level")||1;
+let freeUsed = +localStorage.getItem("freeUsed")||0;
 
-/* UI */
+/* INIT */
 streakEl.innerText = streak;
 levelEl.innerText = level;
-xpBar.style.width = (xp/(level*100))*100 + "%";
-
-usage.innerText =
-  plan==="free"
-  ? `Free sessions left: ${5-freeUsed}`
-  : "Pro unlocked";
+xpBar.style.width = (xp/(level*100))*100+"%";
+usage.innerText = "Free left: "+(5-freeUsed);
 
 /* SESSION */
 let score = 100;
 let reasons = [];
 
-startBtn.onclick = () => {
+function animateScore(){
+  let el = document.getElementById("scoreWrap");
+  el.style.transform="scale(1.1)";
+  setTimeout(()=>el.style.transform="scale(1)",150);
+}
 
-  if(plan==="free" && freeUsed >= 5){
-    alert("Upgrade to continue");
-    return;
-  }
+function startSession(){
+  score = 100;
+  reasons = [];
+  scoreEl.innerText = score;
+}
 
-  setup.classList.add("hidden");
-  session.classList.remove("hidden");
-};
-
-badBtn.onclick = () => {
+function bad(){
   let r = reason.value;
-  if(!r){ alert("Pick reason"); return; }
+  if(!r) return alert("Pick reason");
 
   score -= 25;
   reasons.push(r);
+
   scoreEl.innerText = score;
+  animateScore();
 
   if(score < 50){
     alert("Hard stop triggered");
     endSession();
   }
-};
-
-endBtn.onclick = () => endSession();
+}
 
 function endSession(){
 
-  if(plan==="free") freeUsed++;
+  if(freeUsed>=5) return alert("Upgrade required");
+
+  freeUsed++;
   localStorage.setItem("freeUsed", freeUsed);
 
-  if(score>=75){ streak++; } else { streak=0; }
+  if(score>=75) streak++; else streak=0;
   localStorage.setItem("streak", streak);
 
   xp += score;
@@ -220,126 +280,68 @@ function endSession(){
   localStorage.setItem("xp", xp);
   localStorage.setItem("level", level);
 
-  history.push({
-    score:score,
-    reasons:reasons,
-    note:"",
-    date:Date.now()
-  });
-
+  history.push({score,reasons,date:Date.now()});
   localStorage.setItem("history", JSON.stringify(history));
 
-  session.classList.add("hidden");
-  result.classList.remove("hidden");
-
-  grade.innerText =
-    score>=90?"A":
-    score>=75?"B":
-    score>=50?"C":"D";
+  document.body.classList.add("fade");
+  setTimeout(()=>location.reload(),300);
 }
-
-/* SAVE NOTE */
-saveNoteBtn.onclick = () => {
-  history[history.length-1].note = notes.value;
-  localStorage.setItem("history", JSON.stringify(history));
-  location.reload();
-};
 
 /* JOURNAL */
-function loadJournal(filter="all"){
-  journalContent.innerHTML = "";
+function loadJournal(type="all"){
+  journalList.innerHTML="";
 
   history.slice().reverse().filter(h=>{
-    if(filter==="good") return h.score>=75;
-    if(filter==="bad") return h.score<75;
+    if(type==="good") return h.score>=75;
+    if(type==="bad") return h.score<75;
     return true;
-  }).forEach((h,i)=>{
-
-    let index = history.length-1-i;
-
-    journalContent.innerHTML += `
-      <div class="entry">
-        <strong>${new Date(h.date).toLocaleDateString()}</strong><br>
-        Score: ${h.score}%<br>
-        ${(h.reasons||[]).join(", ")}<br>
-        <div class="small">${h.note || "No notes"}</div>
-        <button onclick="deleteEntry(${index})">Delete</button>
-      </div>
-    `;
+  }).forEach(h=>{
+    journalList.innerHTML+=`
+      <div class="entry fade">
+        ${new Date(h.date).toLocaleDateString()} — ${h.score}%<br>
+        <span class="small">${h.reasons.join(", ")}</span>
+      </div>`;
   });
 }
 
-function deleteEntry(i){
-  history.splice(i,1);
-  localStorage.setItem("history", JSON.stringify(history));
-  loadJournal();
-}
-
-function filterJournal(type){ loadJournal(type); }
+function filter(t){ loadJournal(t); }
+loadJournal();
 
 /* INSIGHTS */
-function insightsEngine(){
-
-  if(history.length < 3){
-    insights.innerHTML = "Not enough data";
+function insights(){
+  if(history.length<3){
+    insightBox.innerText="Not enough data";
     return;
   }
 
-  let count = {};
+  let count={};
   history.forEach(h=>{
-    (h.reasons||[]).forEach(r=>{
-      count[r] = (count[r]||0)+1;
+    h.reasons.forEach(r=>{
+      count[r]=(count[r]||0)+1;
     });
   });
 
   let top = Object.keys(count).sort((a,b)=>count[b]-count[a])[0];
 
-  insights.innerHTML = `Main issue: ${top}`;
+  insightBox.innerHTML = `<div class="insight fade">Main issue: ${top}</div>`;
 }
-
-/* PATTERNS */
-function patternsEngine(){
-
-  let low = history.filter(h=>h.score<75).length;
-
-  if(low > history.length/2){
-    patterns.innerHTML = "You often lose discipline";
-  } else {
-    patterns.innerHTML = "Stable discipline pattern";
-  }
-}
+insights();
 
 /* WEEKLY */
-function weeklyReport(){
+function weekly(){
+  let now=Date.now();
+  let w=7*24*60*60*1000;
 
-  let now = Date.now();
-  let w = 7*24*60*60*1000;
+  let week = history.filter(h=>h.date>now-w);
 
-  let a = history.filter(h=>h.date>now-w);
-  let b = history.filter(h=>h.date>now-2*w && h.date<=now-w);
-
-  let avg = arr => arr.length
-    ? Math.round(arr.reduce((x,y)=>x+y.score,0)/arr.length)
+  let avg = week.length
+    ? Math.round(week.reduce((a,b)=>a+b.score,0)/week.length)
     : 0;
 
-  let avgA = avg(a);
-  let avgB = avg(b);
-
-  weeklyStats.innerText = `This week avg: ${avgA}%`;
-
-  let diff = avgA - avgB;
-
-  comparison.innerText =
-    avgB===0 ? "No previous data"
-    : diff>0 ? `Improved +${diff}%`
-    : `Down ${diff}%`;
+  document.getElementById("weekly").innerText =
+    "This week avg: "+avg+"%";
 }
-
-/* INIT */
-loadJournal();
-insightsEngine();
-patternsEngine();
-weeklyReport();
+weekly();
 
 </script>
 
