@@ -11,6 +11,7 @@ body {
   font-family:'Segoe UI';
   background: radial-gradient(circle at top,#0f172a,#020617);
   color:white;
+  transition: all 0.3s ease;
 }
 
 .container {
@@ -21,10 +22,17 @@ body {
 }
 
 .card {
-  background:rgba(255,255,255,0.04);
+  background:rgba(255,255,255,0.05);
+  backdrop-filter: blur(20px);
   padding:25px;
   margin-top:20px;
   border-radius:20px;
+  transition: all 0.3s ease;
+}
+
+.card:hover {
+  transform: translateY(-5px);
+  box-shadow:0 0 30px rgba(124,58,237,0.2);
 }
 
 button {
@@ -34,19 +42,48 @@ button {
   border-radius:12px;
   font-weight:bold;
   cursor:pointer;
+  transition:0.3s;
 }
 
-.start { background:linear-gradient(135deg,#4f7cff,#7c3aed); }
-.good { background:linear-gradient(135deg,#22c55e,#16a34a); }
-.bad { background:linear-gradient(135deg,#ef4444,#dc2626); }
+.start {
+  background:linear-gradient(135deg,#4f7cff,#7c3aed);
+}
+.start:hover { box-shadow:0 0 15px #7c3aed; }
 
-select {
-  padding:10px;
+.good {
+  background:linear-gradient(135deg,#22c55e,#16a34a);
+}
+.good:hover { box-shadow:0 0 15px #22c55e; }
+
+.bad {
+  background:linear-gradient(135deg,#ef4444,#dc2626);
+}
+.bad:hover { box-shadow:0 0 15px #ef4444; }
+
+.progress {
+  height:10px;
+  background:#111;
   border-radius:10px;
+  overflow:hidden;
   margin-top:10px;
 }
 
+.bar {
+  height:100%;
+  width:100%;
+  background:linear-gradient(90deg,#22c55e,#4f7cff);
+  transition:width 0.3s ease;
+}
+
 .hidden { display:none; }
+
+.upgrade { color:#a78bfa; margin-top:10px; }
+
+.xp {
+  margin-top:10px;
+  font-size:14px;
+  opacity:0.8;
+}
 </style>
 </head>
 
@@ -72,11 +109,12 @@ select {
 <p id="lockMsg"></p>
 
 <p>🔥 Streak: <span id="streak">0</span></p>
+<p class="xp">Level: <span id="level">1</span> | XP: <span id="xp">0</span></p>
 
 <p id="usage"></p>
 
 <a href="https://buy.stripe.com/aFa8wP0XEfQhfb81F16Na01" target="_blank">
-<button class="start">Upgrade — £15/month</button>
+<button class="start">Upgrade to Pro — £15/month</button>
 </a>
 
 </div>
@@ -87,6 +125,8 @@ select {
 <p>Trades: <span id="trades">0</span></p>
 <p>Mistakes: <span id="breaks">0</span></p>
 <p>Score: <span id="score">100</span>%</p>
+
+<div class="progress"><div id="bar" class="bar"></div></div>
 
 <button class="good" onclick="good()">Executed Discipline</button>
 
@@ -109,127 +149,105 @@ select {
 
 <!-- RESULT -->
 <div class="card hidden" id="result">
-<h2>Session Complete</h2>
+<h2 id="resultTitle"></h2>
 <h1 id="grade"></h1>
 <p id="resultText"></p>
+<p id="streakMsg"></p>
 <button onclick="location.reload()">New Session</button>
 </div>
 
-<!-- JOURNAL -->
-<div class="card">
+<!-- PRO JOURNAL -->
+<div class="card" id="journalBox">
+<h3>Behavior Journal (Pro)</h3>
 
-<h3>Behavior Journal</h3>
-
+<div id="journalContent">
 <p>Total Mistakes: <span id="totalMistakes">0</span></p>
 <p>Most Common: <span id="commonMistake">-</span></p>
+<p>Trend: <span id="trend">-</span></p>
+</div>
 
+<div id="journalLock" class="upgrade hidden">
+Upgrade to Pro to unlock insights
+</div>
 </div>
 
 <!-- HISTORY -->
-<div class="card">
+<div class="card" id="historyBox">
+<h3>Session History (Pro)</h3>
 
-<h3>Session History</h3>
 <div id="history"></div>
 
+<div id="historyLock" class="upgrade hidden">
+Upgrade to Pro to view history
+</div>
 </div>
 
 </div>
 
 <script>
 let plan = localStorage.getItem("plan") || "free";
+if(window.location.search.includes("pro=true")){
+  plan="pro";
+  localStorage.setItem("plan","pro");
+}
+
+/* DATA */
+let freeUsed = +localStorage.getItem("freeUsed") || 0;
+let streak = +localStorage.getItem("streak") || 0;
+let xp = +localStorage.getItem("xp") || 0;
+let level = +localStorage.getItem("level") || 1;
+let history = JSON.parse(localStorage.getItem("history") || "[]");
+
+streakEl.innerText = streak;
+xpEl.innerText = xp;
+levelEl.innerText = level;
 
 /* LOCK */
 let today = new Date().toDateString();
 let last = localStorage.getItem("lastSessionDate");
+if(last === today) lockMsg.innerText="You are done for today.";
 
-if(last === today){
-  lockMsg.innerText="You are done for today.";
-}
-
-/* DATA */
-let freeUsed = localStorage.getItem("freeUsed") || 0;
-let streak = localStorage.getItem("streak") || 0;
-let history = JSON.parse(localStorage.getItem("history") || "[]");
-
-streakEl.innerText = streak;
-
+/* USAGE */
 usage.innerText =
   plan==="free"
   ? "Free sessions left: "+(5-freeUsed)
-  : "Unlimited";
+  : "Unlimited access";
 
 /* SESSION */
 let trades=0, breaks=0, score=100;
-let sessionActive=false;
+let sessionReasons=[];
 
-/* ANTI CHEAT */
 if(localStorage.getItem("activeSession")==="true"){
-  alert("Session abandoned. Marked as failed.");
-
-  history.push({
-    score:0,
-    date:new Date().toISOString(),
-    mistakes:5,
-    reason:"Abandoned"
-  });
-
+  history.push({score:0,date:new Date(),mistakes:5,reasons:["Abandoned"]});
   localStorage.setItem("history", JSON.stringify(history));
   localStorage.removeItem("activeSession");
 }
 
 function startSession(){
+  if(last===today) return alert("Come back tomorrow.");
+  if(plan==="free" && freeUsed>=5) return alert("Upgrade required");
+  if(!c1.checked||!c2.checked||!c3.checked||!c4.checked) return alert("Complete checklist");
 
-  if(last===today){
-    alert("Come back tomorrow.");
-    return;
-  }
-
-  if(plan==="free" && freeUsed>=5){
-    alert("Upgrade required");
-    return;
-  }
-
-  if(!c1.checked||!c2.checked||!c3.checked||!c4.checked){
-    alert("Complete checklist");
-    return;
-  }
-
-  sessionActive=true;
   localStorage.setItem("activeSession","true");
-
   setup.classList.add("hidden");
   session.classList.remove("hidden");
 }
 
-function good(){
-  trades++;
-  update();
-}
+function good(){ trades++; update(); }
 
 function bad(){
-
   let r = reason.value;
-
-  if(!r){
-    alert("Select a reason");
-    return;
-  }
-
-  trades++;
-  breaks++;
-  score -= 25;
-
+  if(!r) return alert("Select reason");
+  trades++; breaks++; score-=25;
   sessionReasons.push(r);
-
   update();
 }
-
-let sessionReasons=[];
 
 function update(){
   tradesEl.innerText=trades;
   breaksEl.innerText=breaks;
   scoreEl.innerText=score;
+  bar.style.width = score+"%";
 }
 
 function endSession(){
@@ -245,6 +263,18 @@ function endSession(){
   if(score>=75) streak++; else streak=0;
   localStorage.setItem("streak", streak);
 
+  /* XP SYSTEM */
+  let earnedXP = Math.max(10, score);
+  xp += earnedXP;
+
+  if(xp >= level*100){
+    xp = 0;
+    level++;
+  }
+
+  localStorage.setItem("xp", xp);
+  localStorage.setItem("level", level);
+
   history.push({
     score:score,
     date:new Date().toISOString(),
@@ -257,21 +287,39 @@ function endSession(){
   session.classList.add("hidden");
   result.classList.remove("hidden");
 
-  gradeEl.innerText =
-    score>=90?"A":score>=75?"B":score>=50?"C":"D";
+  let grade = score>=90?"A":score>=75?"B":score>=50?"C":"D";
+  gradeEl.innerText = grade;
 
-  resultText.innerText="Discipline recorded.";
+  resultTitle.innerText =
+    score>=75 ? "Strong Discipline" : "Needs Improvement";
+
+  resultText.innerText =
+    score>=75 ? "You followed your system well." :
+    "You broke discipline. Review your mistakes.";
+
+  streakMsg.innerText =
+    streak>=3 ? "🔥 On fire — keep going" :
+    streak===0 ? "⚠️ Streak lost" : "";
 }
 
-/* JOURNAL */
-function loadJournal(){
+/* PRO LOCK */
+if(plan==="free"){
+  journalContent.style.display="none";
+  journalLock.classList.remove("hidden");
+  history.innerHTML="";
+  historyLock.classList.remove("hidden");
+}
+else{
+  loadJournal();
+  loadHistory();
+}
 
-  let total=0;
-  let counts={};
+function loadJournal(){
+  let total=0, scores=[], counts={};
 
   history.forEach(h=>{
-    total += h.mistakes || 0;
-
+    total += h.mistakes||0;
+    scores.push(h.score);
     (h.reasons||[]).forEach(r=>{
       counts[r]=(counts[r]||0)+1;
     });
@@ -281,16 +329,18 @@ function loadJournal(){
 
   let common="-", max=0;
   for(let k in counts){
-    if(counts[k]>max){
-      max=counts[k];
-      common=k;
-    }
+    if(counts[k]>max){ max=counts[k]; common=k; }
   }
-
   commonMistake.innerText=common;
+
+  let trend="No data";
+  if(scores.length>=2){
+    let a=scores.at(-1), b=scores.at(-2);
+    trend = a>b?"Improving":a<b?"Declining":"No change";
+  }
+  trendEl.innerText=trend;
 }
 
-/* HISTORY */
 function loadHistory(){
   historyDiv.innerHTML="";
   history.slice().reverse().forEach(h=>{
@@ -299,9 +349,6 @@ function loadHistory(){
     </div>`;
   });
 }
-
-loadJournal();
-loadHistory();
 </script>
 
 </body>
