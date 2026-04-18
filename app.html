@@ -14,7 +14,7 @@ body {
 }
 
 .container {
-  max-width:800px;
+  max-width:700px;
   margin:auto;
   padding:40px 20px;
   text-align:center;
@@ -47,17 +47,17 @@ button {
   background:#111;
   border-radius:10px;
   margin-top:10px;
+  overflow:hidden;
 }
 
 .bar {
   height:100%;
   width:100%;
   background:#22c55e;
+  transition:0.3s;
 }
 
-.heatmap div {
-  margin:5px 0;
-}
+.upgrade { color:#a78bfa; margin-top:10px; }
 </style>
 </head>
 
@@ -79,10 +79,13 @@ button {
 <br>
 <button class="start" id="startBtn">Start Session</button>
 
+<p id="usage"></p>
+<p>🔥 Streak: <span id="streak">0</span></p>
 <p id="lockMsg"></p>
 
-<p>Streak: <span id="streak">0</span></p>
-<p id="usage"></p>
+<a href="https://buy.stripe.com/aFa8wP0XEfQhfb81F16Na01" target="_blank">
+<button class="start">Upgrade to Pro — £15/month</button>
+</a>
 
 </div>
 
@@ -109,21 +112,40 @@ button {
 <button class="bad" id="badBtn">Bad</button>
 
 <br>
-<button id="endBtn">End</button>
+<button id="endBtn">End Session</button>
 
 </div>
 
-<div class="card">
+<div class="card" id="heatmapBox">
 
 <h3>Heatmap (Pro)</h3>
 
-<div id="heatmap"></div>
+<div id="heatmapContent"></div>
+
+<div id="heatmapLock" class="upgrade hidden">
+Upgrade to Pro to unlock insights
+</div>
 
 </div>
 
 </div>
 
 <script>
+
+/* PLAN */
+let plan = localStorage.getItem("plan") || "free";
+if(window.location.search.includes("pro=true")){
+  plan="pro";
+  localStorage.setItem("plan","pro");
+}
+
+/* DATA */
+let freeUsed = +localStorage.getItem("freeUsed") || 0;
+let streak = +localStorage.getItem("streak") || 0;
+let lastDate = localStorage.getItem("lastDate");
+let history = JSON.parse(localStorage.getItem("history") || "[]");
+
+/* ELEMENTS */
 const startBtn = document.getElementById("startBtn");
 const goodBtn = document.getElementById("goodBtn");
 const badBtn = document.getElementById("badBtn");
@@ -137,29 +159,47 @@ const breaksEl = document.getElementById("breaks");
 const scoreEl = document.getElementById("score");
 const bar = document.getElementById("bar");
 
-const streakEl = document.getElementById("streak");
 const usage = document.getElementById("usage");
-const heatmap = document.getElementById("heatmap");
+const streakEl = document.getElementById("streak");
+const lockMsg = document.getElementById("lockMsg");
 
-let freeUsed = +localStorage.getItem("freeUsed") || 0;
-let streak = +localStorage.getItem("streak") || 0;
-let history = JSON.parse(localStorage.getItem("history") || "[]");
+const heatmapContent = document.getElementById("heatmapContent");
+const heatmapLock = document.getElementById("heatmapLock");
 
+/* INIT */
 streakEl.innerText = streak;
-usage.innerText = "Free sessions left: " + (5-freeUsed);
 
+usage.innerText =
+  plan==="free"
+  ? "Free sessions left: " + (5-freeUsed)
+  : "Unlimited sessions";
+
+/* DAILY LOCK (PRO ONLY) */
+let today = new Date().toDateString();
+
+if(plan==="pro" && lastDate === today){
+  lockMsg.innerText = "You are done for today.";
+}
+
+/* SESSION STATE */
 let trades=0, breaks=0, score=100;
 let reasons=[];
 
+/* START */
 startBtn.onclick = () => {
 
-  if(freeUsed>=5){
-    alert("Limit reached");
+  if(plan==="pro" && lastDate === today){
+    alert("Come back tomorrow.");
+    return;
+  }
+
+  if(plan==="free" && freeUsed>=5){
+    alert("Free limit reached.");
     return;
   }
 
   if(!c1.checked||!c2.checked||!c3.checked||!c4.checked){
-    alert("Complete checklist");
+    alert("Complete checklist.");
     return;
   }
 
@@ -167,15 +207,18 @@ startBtn.onclick = () => {
   session.classList.remove("hidden");
 };
 
+/* ACTIONS */
 goodBtn.onclick = () => {
   trades++;
   update();
 };
 
 badBtn.onclick = () => {
+
   let r = reason.value;
+
   if(!r){
-    alert("Pick reason");
+    alert("Pick reason.");
     return;
   }
 
@@ -183,6 +226,7 @@ badBtn.onclick = () => {
   breaks++;
   score -= 25;
   reasons.push(r);
+
   update();
 };
 
@@ -190,26 +234,47 @@ function update(){
   tradesEl.innerText = trades;
   breaksEl.innerText = breaks;
   scoreEl.innerText = score;
-  bar.style.width = score+"%";
+  bar.style.width = score + "%";
 }
 
+/* END */
 endBtn.onclick = () => {
 
-  freeUsed++;
-  localStorage.setItem("freeUsed", freeUsed);
+  if(plan==="free"){
+    freeUsed++;
+    localStorage.setItem("freeUsed", freeUsed);
+  }
+
+  localStorage.setItem("lastDate", today);
+
+  /* STREAK */
+  if(score >= 75){
+    streak++;
+  } else {
+    streak = 0;
+  }
+
+  localStorage.setItem("streak", streak);
 
   history.push({
-    score:score,
-    reasons:reasons
+    score: score,
+    reasons: reasons
   });
 
   localStorage.setItem("history", JSON.stringify(history));
 
-  alert("Session saved");
+  alert("Session complete");
   location.reload();
 };
 
+/* HEATMAP */
 function loadHeatmap(){
+
+  if(plan==="free"){
+    heatmapContent.style.display="none";
+    heatmapLock.classList.remove("hidden");
+    return;
+  }
 
   let counts = {FOMO:0,Revenge:0,Boredom:0,Impulse:0};
 
@@ -219,15 +284,16 @@ function loadHeatmap(){
     });
   });
 
-  heatmap.innerHTML = `
-  <div>🔴 FOMO: ${counts.FOMO}</div>
-  <div>🟠 Revenge: ${counts.Revenge}</div>
-  <div>🟡 Boredom: ${counts.Boredom}</div>
-  <div>🔵 Impulse: ${counts.Impulse}</div>
+  heatmapContent.innerHTML = `
+    <div>🔴 FOMO: ${counts.FOMO}</div>
+    <div>🟠 Revenge: ${counts.Revenge}</div>
+    <div>🟡 Boredom: ${counts.Boredom}</div>
+    <div>🔵 Impulse: ${counts.Impulse}</div>
   `;
 }
 
 loadHeatmap();
+
 </script>
 
 </body>
