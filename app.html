@@ -36,7 +36,6 @@ button {
 }
 
 .start { background:#7c3aed; color:white; }
-.good { background:#22c55e; }
 .bad { background:#ef4444; }
 
 .entry {
@@ -44,6 +43,14 @@ button {
   padding:12px;
   background:rgba(255,255,255,0.05);
   border-radius:10px;
+}
+
+.pattern {
+  padding:10px;
+  margin-top:10px;
+  border-left:4px solid #7c3aed;
+  background:rgba(124,58,237,0.1);
+  border-radius:8px;
 }
 
 .small {
@@ -86,11 +93,16 @@ button {
 <div class="card hidden" id="result">
 <h2 id="grade"></h2>
 
-<textarea id="notes" placeholder="What went wrong? What will you improve?"></textarea>
+<textarea id="notes" placeholder="What went wrong?"></textarea>
 <button id="saveNoteBtn">Save Journal</button>
 </div>
 
 <!-- JOURNAL -->
+<div class="card">
+<h3>Journal Insights</h3>
+<div id="patterns"></div>
+</div>
+
 <div class="card">
 <h3>Journal</h3>
 
@@ -127,7 +139,6 @@ badBtn.onclick = () => {
 
   score -= 25;
   reasons.push(r);
-  scoreEl.innerText = score;
 
   if(score < 50){
     endSession();
@@ -159,11 +170,8 @@ function endSession(){
 
 /* SAVE NOTE */
 saveNoteBtn.onclick = () => {
-  let note = notes.value;
-
-  history[history.length-1].note = note;
+  history[history.length-1].note = notes.value;
   localStorage.setItem("history", JSON.stringify(history));
-
   location.reload();
 };
 
@@ -194,15 +202,61 @@ function loadJournal(filter="all"){
   });
 }
 
-function filterJournal(type){
-  loadJournal(type);
-}
-
 function deleteEntry(i){
   history.splice(i,1);
   localStorage.setItem("history", JSON.stringify(history));
   loadJournal();
 }
+
+/* PATTERN ENGINE */
+function generatePatterns(){
+
+  if(history.length < 3){
+    patterns.innerHTML = "<p>Not enough data yet</p>";
+    return;
+  }
+
+  let mistakeCount = {};
+  let lowScore = 0;
+  let multiMistakeSessions = 0;
+
+  history.forEach(h=>{
+    if(h.score < 75) lowScore++;
+
+    if((h.reasons||[]).length >= 2){
+      multiMistakeSessions++;
+    }
+
+    (h.reasons||[]).forEach(r=>{
+      mistakeCount[r] = (mistakeCount[r]||0)+1;
+    });
+  });
+
+  let topMistake = Object.keys(mistakeCount)
+    .sort((a,b)=>mistakeCount[b]-mistakeCount[a])[0];
+
+  let output = "";
+
+  if(topMistake){
+    output += `<div class="pattern">Most common mistake: ${topMistake}</div>`;
+  }
+
+  if(lowScore > history.length/2){
+    output += `<div class="pattern">You often lose discipline (score <75%)</div>`;
+  }
+
+  if(multiMistakeSessions > history.length/3){
+    output += `<div class="pattern">You tend to stack mistakes in sessions</div>`;
+  }
+
+  if(output === ""){
+    output = `<div class="pattern">Strong discipline pattern detected</div>`;
+  }
+
+  patterns.innerHTML = output;
+}
+
+generatePatterns();
 
 loadJournal();
 
