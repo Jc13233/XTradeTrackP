@@ -37,20 +37,17 @@ button {
 }
 
 .start { background: linear-gradient(135deg,#7c3aed,#6366f1); }
-.good { background:#22c55e; }
-.bad { background:#ef4444; }
 
-.progress {
-  height:10px;
-  background:#020617;
-  border-radius:10px;
-  margin-top:10px;
-  overflow:hidden;
+.timer {
+  font-size:28px;
+  text-align:center;
+  margin:15px 0;
+  color:#a78bfa;
 }
 
-.bar {
-  height:100%;
-  background:#7c3aed;
+.score {
+  font-size:32px;
+  text-align:center;
 }
 
 .entry {
@@ -70,47 +67,38 @@ button {
 
 <h1>TradeTrack</h1>
 
-<!-- WEEKLY REPORT -->
-<div class="card">
-<h3>Weekly Performance</h3>
-<p id="weeklyStats"></p>
-<p id="weeklyInsight"></p>
-<p id="comparison"></p>
-</div>
-
 <!-- SETUP -->
 <div class="card" id="setup">
+
+<h3>Set Target</h3>
+
+<select id="target">
+  <option value="300">5 Minutes</option>
+  <option value="600">10 Minutes</option>
+  <option value="900">15 Minutes</option>
+  <option value="1800">30 Minutes</option>
+</select>
+
+<br>
+
 <button class="start" id="startBtn">Start Session</button>
 
-<p>🔥 Streak: <span id="streak">0</span></p>
-<p>⭐ Level: <span id="level">1</span></p>
-
-<div class="progress"><div id="xpBar" class="bar"></div></div>
 </div>
 
 <!-- SESSION -->
 <div class="card hidden" id="session">
 
-<p>Score: <span id="score">100</span>%</p>
+<div class="timer" id="timer">00:00</div>
+<div class="score" id="score">0%</div>
 
-<button class="good" id="goodBtn">Good</button>
-
-<select id="reason">
-<option value="">Why break?</option>
-<option>FOMO</option>
-<option>Revenge</option>
-<option>Boredom</option>
-<option>Impulse</option>
-</select>
-
-<button class="bad" id="badBtn">Bad</button>
-<button id="endBtn">End Session</button>
+<button id="quitBtn">Quit Early</button>
 
 </div>
 
 <!-- RESULT -->
 <div class="card hidden" id="result">
 <h1 id="grade"></h1>
+<p id="resultText"></p>
 </div>
 
 <!-- JOURNAL -->
@@ -125,63 +113,60 @@ button {
 
 /* DATA */
 let history = JSON.parse(localStorage.getItem("history") || "[]");
-let streak = +localStorage.getItem("streak") || 0;
-let xp = +localStorage.getItem("xp") || 0;
-let level = +localStorage.getItem("level") || 1;
-
-/* UI */
-streakEl = document.getElementById("streak");
-levelEl = document.getElementById("level");
-xpBar = document.getElementById("xpBar");
-
-streakEl.innerText = streak;
-levelEl.innerText = level;
-xpBar.style.width = (xp/(level*100))*100 + "%";
 
 /* SESSION */
-let score = 100;
-let reasons = [];
+let duration = 0;
+let targetTime = 300;
+let timer;
 
 /* START */
 startBtn.onclick = () => {
+
+  targetTime = parseInt(target.value);
+  duration = 0;
+
   setup.classList.add("hidden");
   session.classList.remove("hidden");
+
+  timer = setInterval(()=>{
+    duration++;
+
+    let remaining = targetTime - duration;
+    if(remaining <= 0){
+      finishSession();
+      return;
+    }
+
+    updateUI(remaining);
+
+  },1000);
 };
 
-/* BAD */
-badBtn.onclick = () => {
-  let r = reason.value;
-  if(!r){ alert("Pick reason"); return; }
+/* UPDATE */
+function updateUI(remaining){
+  let m = String(Math.floor(remaining/60)).padStart(2,"0");
+  let s = String(remaining%60).padStart(2,"0");
+  timerEl.innerText = `${m}:${s}`;
 
-  score -= 25;
-  reasons.push(r);
+  let percent = Math.floor((duration / targetTime) * 100);
+  scoreEl.innerText = percent + "%";
+}
 
-  if(score < 50){
-    endSession();
-  }
-};
+/* QUIT */
+quitBtn.onclick = () => finishSession();
 
 /* END */
-endBtn.onclick = () => endSession();
+function finishSession(){
 
-function endSession(){
+  clearInterval(timer);
 
-  if(score>=75){ streak++; } else { streak=0; }
-  localStorage.setItem("streak", streak);
-
-  xp += score;
-  if(xp >= level*100){
-    xp -= level*100;
-    level++;
-  }
-
-  localStorage.setItem("xp", xp);
-  localStorage.setItem("level", level);
+  let percent = Math.floor((duration / targetTime) * 100);
 
   history.push({
-    score:score,
-    reasons:reasons,
-    date:Date.now()
+    percent,
+    duration,
+    target: targetTime,
+    date: Date.now()
   });
 
   localStorage.setItem("history", JSON.stringify(history));
@@ -190,69 +175,27 @@ function endSession(){
   result.classList.remove("hidden");
 
   grade.innerText =
-    score>=90?"A":
-    score>=75?"B":
-    score>=50?"C":"D";
+    percent >= 100 ? "Complete" :
+    percent >= 70 ? "Almost" :
+    percent >= 40 ? "Weak" : "Failed";
+
+  resultText.innerText =
+    `You completed ${percent}% of your target`;
+
 }
 
 /* JOURNAL */
 function loadJournal(){
+  journalContent.innerHTML = "";
   history.slice().reverse().forEach(h=>{
     journalContent.innerHTML += `
       <div class="entry">
-        ${new Date(h.date).toLocaleDateString()} — ${h.score}%
-        <br>${(h.reasons||[]).join(", ")}
+        ${new Date(h.date).toLocaleDateString()} — ${h.percent}%
       </div>
     `;
   });
 }
 loadJournal();
-
-/* WEEKLY COMPARISON */
-function weeklyReport(){
-
-  let now = Date.now();
-  let oneWeek = 7*24*60*60*1000;
-
-  let thisWeek = history.filter(h => h.date > now - oneWeek);
-  let lastWeek = history.filter(h =>
-    h.date > now - (2*oneWeek) && h.date <= now - oneWeek
-  );
-
-  function avg(arr){
-    if(arr.length===0) return 0;
-    return Math.round(arr.reduce((a,b)=>a+b.score,0)/arr.length);
-  }
-
-  let avgThis = avg(thisWeek);
-  let avgLast = avg(lastWeek);
-
-  weeklyStats.innerText =
-    `This week: ${thisWeek.length} sessions | Avg ${avgThis}%`;
-
-  let diff = avgThis - avgLast;
-
-  if(lastWeek.length === 0){
-    comparison.innerText = "No previous data yet";
-  } else if(diff > 0){
-    comparison.innerText = `📈 Improved by +${diff}% from last week`;
-  } else if(diff < 0){
-    comparison.innerText = `📉 Down ${diff}% — tighten discipline`;
-  } else {
-    comparison.innerText = "No change";
-  }
-
-  /* INSIGHT */
-  if(avgThis < 60){
-    weeklyInsight.innerText = "You are trading emotionally.";
-  } else if(avgThis < 75){
-    weeklyInsight.innerText = "You're inconsistent.";
-  } else {
-    weeklyInsight.innerText = "Strong discipline. Keep it up.";
-  }
-}
-
-weeklyReport();
 
 </script>
 
