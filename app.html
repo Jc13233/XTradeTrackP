@@ -54,7 +54,6 @@ button {
   height:100%;
   width:100%;
   background:#22c55e;
-  transition:0.3s;
 }
 
 .upgrade { color:#a78bfa; margin-top:10px; }
@@ -67,6 +66,7 @@ button {
 
 <h1>TradeTrack</h1>
 
+<!-- SETUP -->
 <div class="card" id="setup">
 
 <h3>Checklist</h3>
@@ -90,6 +90,7 @@ button {
 
 </div>
 
+<!-- SESSION -->
 <div class="card hidden" id="session">
 
 <p>Trades: <span id="trades">0</span></p>
@@ -117,6 +118,20 @@ button {
 
 </div>
 
+<!-- RESULT SCREEN -->
+<div class="card hidden" id="result">
+
+<h2 id="resultTitle"></h2>
+<h1 id="grade"></h1>
+<p id="resultText"></p>
+<p id="xpGain"></p>
+<p id="streakMsg"></p>
+
+<button onclick="location.reload()">New Session</button>
+
+</div>
+
+<!-- HEATMAP -->
 <div class="card">
 
 <h3>Heatmap (Pro)</h3>
@@ -146,7 +161,6 @@ let streak = +localStorage.getItem("streak") || 0;
 let lastDate = localStorage.getItem("lastDate");
 let history = JSON.parse(localStorage.getItem("history") || "[]");
 
-/* XP SYSTEM */
 let xp = +localStorage.getItem("xp") || 0;
 let level = +localStorage.getItem("level") || 1;
 
@@ -158,6 +172,7 @@ const endBtn = document.getElementById("endBtn");
 
 const setup = document.getElementById("setup");
 const session = document.getElementById("session");
+const result = document.getElementById("result");
 
 const tradesEl = document.getElementById("trades");
 const breaksEl = document.getElementById("breaks");
@@ -170,6 +185,12 @@ const lockMsg = document.getElementById("lockMsg");
 
 const xpEl = document.getElementById("xp");
 const levelEl = document.getElementById("level");
+
+const resultTitle = document.getElementById("resultTitle");
+const gradeEl = document.getElementById("grade");
+const resultText = document.getElementById("resultText");
+const xpGain = document.getElementById("xpGain");
+const streakMsg = document.getElementById("streakMsg");
 
 const heatmapContent = document.getElementById("heatmapContent");
 const heatmapLock = document.getElementById("heatmapLock");
@@ -184,8 +205,8 @@ usage.innerText =
   ? "Free sessions left: " + (5-freeUsed)
   : "Unlimited sessions";
 
-/* DAILY LOCK */
 let today = new Date().toDateString();
+
 if(plan==="pro" && lastDate === today){
   lockMsg.innerText = "You are done for today.";
 }
@@ -233,7 +254,6 @@ badBtn.onclick = () => {
   breaks++;
   score -= 25;
   reasons.push(r);
-
   update();
 };
 
@@ -254,40 +274,47 @@ endBtn.onclick = () => {
 
   localStorage.setItem("lastDate", today);
 
-  /* STREAK */
-  if(score >= 75){
-    streak++;
-  } else {
-    streak = 0;
-  }
+  if(score >= 75){ streak++; } else { streak=0; }
   localStorage.setItem("streak", streak);
 
-  /* XP LOGIC */
   let gainedXP = Math.max(10, score);
   xp += gainedXP;
 
-  if(xp >= level * 100){
-    xp = xp - (level * 100);
+  if(xp >= level*100){
+    xp -= level*100;
     level++;
   }
 
   localStorage.setItem("xp", xp);
   localStorage.setItem("level", level);
 
-  history.push({
-    score: score,
-    reasons: reasons
-  });
-
+  history.push({score:score,reasons:reasons});
   localStorage.setItem("history", JSON.stringify(history));
 
-  alert("Session complete");
-  location.reload();
+  /* SHOW RESULT */
+  session.classList.add("hidden");
+  result.classList.remove("hidden");
+
+  let grade = score>=90?"A":score>=75?"B":score>=50?"C":"D";
+
+  gradeEl.innerText = grade;
+
+  resultTitle.innerText =
+    score>=75 ? "Strong Discipline" : "Needs Work";
+
+  resultText.innerText =
+    score>=75 ? "You followed your system well." :
+    "You broke discipline. Review mistakes.";
+
+  xpGain.innerText = "XP Gained: +" + gainedXP;
+
+  streakMsg.innerText =
+    streak>=3 ? "🔥 You're on fire" :
+    streak===0 ? "⚠️ Streak lost" : "";
 };
 
 /* HEATMAP */
 function loadHeatmap(){
-
   if(plan==="free"){
     heatmapContent.style.display="none";
     heatmapLock.classList.remove("hidden");
