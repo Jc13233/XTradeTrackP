@@ -40,15 +40,10 @@ button {
 .good { background:linear-gradient(135deg,#22c55e,#16a34a); }
 .bad { background:linear-gradient(135deg,#ef4444,#dc2626); }
 
-.locked-box {
-  opacity:0.4;
-  pointer-events:none;
-}
-
-.upgrade {
+select {
+  padding:10px;
+  border-radius:10px;
   margin-top:10px;
-  color:#a78bfa;
-  cursor:pointer;
 }
 
 .hidden { display:none; }
@@ -81,7 +76,7 @@ button {
 <p id="usage"></p>
 
 <a href="https://buy.stripe.com/aFa8wP0XEfQhfb81F16Na01" target="_blank">
-<button class="start">Upgrade to Pro — £15/month</button>
+<button class="start">Upgrade — £15/month</button>
 </a>
 
 </div>
@@ -94,6 +89,17 @@ button {
 <p>Score: <span id="score">100</span>%</p>
 
 <button class="good" onclick="good()">Executed Discipline</button>
+
+<br>
+
+<select id="reason">
+<option value="">Why did you break?</option>
+<option>FOMO</option>
+<option>Revenge</option>
+<option>Boredom</option>
+<option>Impulse</option>
+</select>
+
 <button class="bad" onclick="bad()">Broke System</button>
 
 <br>
@@ -109,31 +115,22 @@ button {
 <button onclick="location.reload()">New Session</button>
 </div>
 
-<!-- WEEKLY (PRO ONLY) -->
-<div class="card" id="weeklyBox">
-<h3>Weekly Report (Pro)</h3>
+<!-- JOURNAL -->
+<div class="card">
 
-<div id="weeklyContent">
-<p>Sessions: <span id="weekSessions">0</span></p>
-<p>Average Score: <span id="weekAvg">0</span>%</p>
-<p>Mistakes: <span id="weekMistakes">0</span></p>
-<p id="weekFeedback"></p>
+<h3>Behavior Journal</h3>
+
+<p>Total Mistakes: <span id="totalMistakes">0</span></p>
+<p>Most Common: <span id="commonMistake">-</span></p>
+
 </div>
 
-<div id="weeklyLock" class="upgrade hidden">
-Upgrade to Pro to unlock weekly insights
-</div>
-</div>
+<!-- HISTORY -->
+<div class="card">
 
-<!-- HISTORY (PRO ONLY) -->
-<div class="card" id="historyBox">
-<h3>Session History (Pro)</h3>
-
+<h3>Session History</h3>
 <div id="history"></div>
 
-<div id="historyLock" class="upgrade hidden">
-Upgrade to Pro to view history
-</div>
 </div>
 
 </div>
@@ -141,38 +138,48 @@ Upgrade to Pro to view history
 <script>
 let plan = localStorage.getItem("plan") || "free";
 
-/* TEMP PRO UNLOCK */
-if(window.location.search.includes("pro=true")){
-  plan = "pro";
-  localStorage.setItem("plan","pro");
+/* LOCK */
+let today = new Date().toDateString();
+let last = localStorage.getItem("lastSessionDate");
+
+if(last === today){
+  lockMsg.innerText="You are done for today.";
 }
 
+/* DATA */
 let freeUsed = localStorage.getItem("freeUsed") || 0;
 let streak = localStorage.getItem("streak") || 0;
 let history = JSON.parse(localStorage.getItem("history") || "[]");
 
 streakEl.innerText = streak;
 
-/* DAILY LOCK */
-let today = new Date().toDateString();
-let last = localStorage.getItem("lastSessionDate");
-
-if(last === today){
-  lockMsg.innerText = "You are done for today.";
-}
-
-/* USAGE */
 usage.innerText =
   plan==="free"
-  ? "Free sessions left: " + (5-freeUsed)
-  : "Unlimited access";
+  ? "Free sessions left: "+(5-freeUsed)
+  : "Unlimited";
 
 /* SESSION */
 let trades=0, breaks=0, score=100;
+let sessionActive=false;
+
+/* ANTI CHEAT */
+if(localStorage.getItem("activeSession")==="true"){
+  alert("Session abandoned. Marked as failed.");
+
+  history.push({
+    score:0,
+    date:new Date().toISOString(),
+    mistakes:5,
+    reason:"Abandoned"
+  });
+
+  localStorage.setItem("history", JSON.stringify(history));
+  localStorage.removeItem("activeSession");
+}
 
 function startSession(){
 
-  if(last === today){
+  if(last===today){
     alert("Come back tomorrow.");
     return;
   }
@@ -187,12 +194,37 @@ function startSession(){
     return;
   }
 
+  sessionActive=true;
+  localStorage.setItem("activeSession","true");
+
   setup.classList.add("hidden");
   session.classList.remove("hidden");
 }
 
-function good(){ trades++; update(); }
-function bad(){ trades++; breaks++; score-=25; update(); }
+function good(){
+  trades++;
+  update();
+}
+
+function bad(){
+
+  let r = reason.value;
+
+  if(!r){
+    alert("Select a reason");
+    return;
+  }
+
+  trades++;
+  breaks++;
+  score -= 25;
+
+  sessionReasons.push(r);
+
+  update();
+}
+
+let sessionReasons=[];
 
 function update(){
   tradesEl.innerText=trades;
@@ -202,6 +234,7 @@ function update(){
 
 function endSession(){
 
+  localStorage.removeItem("activeSession");
   localStorage.setItem("lastSessionDate", today);
 
   if(plan==="free"){
@@ -213,9 +246,10 @@ function endSession(){
   localStorage.setItem("streak", streak);
 
   history.push({
-    score: score,
-    date: new Date().toISOString(),
-    mistakes: breaks
+    score:score,
+    date:new Date().toISOString(),
+    mistakes:breaks,
+    reasons:sessionReasons
   });
 
   localStorage.setItem("history", JSON.stringify(history));
@@ -226,48 +260,34 @@ function endSession(){
   gradeEl.innerText =
     score>=90?"A":score>=75?"B":score>=50?"C":"D";
 
-  resultText.innerText="Session logged.";
+  resultText.innerText="Discipline recorded.";
 }
 
-/* PRO LOCK SYSTEM */
+/* JOURNAL */
+function loadJournal(){
 
-if(plan==="free"){
-  weeklyContent.style.display="none";
-  weeklyLock.classList.remove("hidden");
+  let total=0;
+  let counts={};
 
-  history.innerHTML="";
-  historyLock.classList.remove("hidden");
-}
-else{
-  loadWeekly();
-  loadHistory();
-}
+  history.forEach(h=>{
+    total += h.mistakes || 0;
 
-/* WEEKLY */
-function loadWeekly(){
-  let now=new Date();
-  let weekAgo=new Date();
-  weekAgo.setDate(now.getDate()-7);
-
-  let data=history.filter(h=>new Date(h.date)>weekAgo);
-
-  let total=data.length, avg=0, mistakes=0;
-
-  data.forEach(h=>{
-    avg+=h.score;
-    mistakes+=h.mistakes||0;
+    (h.reasons||[]).forEach(r=>{
+      counts[r]=(counts[r]||0)+1;
+    });
   });
 
-  avg = total?Math.round(avg/total):0;
+  totalMistakes.innerText=total;
 
-  weekSessions.innerText=total;
-  weekAvg.innerText=avg;
-  weekMistakes.innerText=mistakes;
+  let common="-", max=0;
+  for(let k in counts){
+    if(counts[k]>max){
+      max=counts[k];
+      common=k;
+    }
+  }
 
-  weekFeedback.innerText =
-    avg>=80?"Strong discipline week":
-    avg>=60?"Decent but improve":
-    "You are breaking rules too often";
+  commonMistake.innerText=common;
 }
 
 /* HISTORY */
@@ -279,6 +299,9 @@ function loadHistory(){
     </div>`;
   });
 }
+
+loadJournal();
+loadHistory();
 </script>
 
 </body>
