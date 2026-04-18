@@ -6,23 +6,19 @@
 <title>TradeTrack</title>
 
 <style>
-
-/* GLOBAL */
 body {
   margin:0;
-  font-family: Inter, system-ui, -apple-system;
+  font-family: Inter, system-ui;
   background: radial-gradient(circle at top,#1e293b,#020617);
   color:#e2e8f0;
 }
 
-/* LAYOUT */
 .container {
   max-width:720px;
   margin:auto;
   padding:40px 20px;
 }
 
-/* CARD */
 .card {
   background: rgba(255,255,255,0.05);
   backdrop-filter: blur(10px);
@@ -30,17 +26,10 @@ body {
   padding:25px;
   margin-top:20px;
   border-radius:18px;
-  box-shadow:0 10px 30px rgba(0,0,0,0.4);
 }
 
-/* TITLE */
-h1 {
-  text-align:center;
-  font-size:28px;
-  margin-bottom:10px;
-}
+h1 { text-align:center; }
 
-/* BUTTONS */
 button {
   padding:12px 20px;
   margin:10px 5px;
@@ -48,28 +37,12 @@ button {
   border-radius:10px;
   font-weight:600;
   cursor:pointer;
-  transition:0.2s;
 }
 
-button:hover {
-  transform:translateY(-2px);
-  opacity:0.9;
-}
+.start { background: linear-gradient(135deg,#7c3aed,#6366f1); }
+.good { background:#22c55e; }
+.bad { background:#ef4444; }
 
-.start {
-  background: linear-gradient(135deg,#7c3aed,#6366f1);
-  color:white;
-}
-
-.good {
-  background:#22c55e;
-}
-
-.bad {
-  background:#ef4444;
-}
-
-/* INPUTS */
 select, textarea {
   width:100%;
   padding:10px;
@@ -80,55 +53,25 @@ select, textarea {
   color:white;
 }
 
-/* TEXTAREA */
-textarea {
-  height:100px;
-}
+.warning { color:#facc15; margin-top:10px; }
+.danger { color:#ef4444; }
 
-/* WARNINGS */
-.warning {
-  margin-top:10px;
-  font-weight:600;
-  color:#facc15;
-}
-
-.danger {
-  color:#ef4444;
-}
-
-/* RESULTS */
 .success { color:#22c55e; }
 .fail { color:#ef4444; }
 
-/* BADGES */
 .badge {
   display:inline-block;
-  padding:10px 14px;
+  padding:10px;
   margin:6px;
-  border-radius:12px;
-  background:rgba(255,255,255,0.06);
-  font-size:14px;
-  transition:0.2s;
+  border-radius:10px;
+  background:rgba(255,255,255,0.05);
 }
 
-.badge:hover {
-  transform:scale(1.05);
-}
+.locked { opacity:0.3; }
 
-.locked {
-  opacity:0.25;
-}
-
-/* PRO LOCK */
-.upgrade {
-  text-align:center;
-  margin-top:10px;
-  color:#a78bfa;
-  font-size:14px;
-}
+.upgrade { text-align:center; color:#a78bfa; }
 
 .hidden { display:none; }
-
 </style>
 </head>
 
@@ -142,7 +85,6 @@ textarea {
 <div class="card" id="setup">
 
 <h3>Checklist</h3>
-
 <label><input type="checkbox" id="c1"> Setup</label><br>
 <label><input type="checkbox" id="c2"> Risk</label><br>
 <label><input type="checkbox" id="c3"> No revenge</label><br>
@@ -201,7 +143,6 @@ textarea {
 <p id="badgeEarned"></p>
 
 <textarea id="notes" placeholder="Session notes..."></textarea>
-
 <button id="saveNoteBtn">Save</button>
 
 </div>
@@ -210,7 +151,6 @@ textarea {
 <div class="card">
 
 <h3>Achievements</h3>
-
 <div id="badges"></div>
 
 <div id="badgeLock" class="upgrade hidden">
@@ -223,10 +163,16 @@ Upgrade to Pro to unlock achievements
 
 <script>
 
-/* (LOGIC UNCHANGED FROM V33 — SAFE) */
-
+/* PRO SYSTEM */
 let plan = localStorage.getItem("plan") || "free";
 
+if (window.location.search.includes("pro=true")) {
+  plan = "pro";
+  localStorage.setItem("plan","pro");
+  window.history.replaceState({}, document.title, window.location.pathname);
+}
+
+/* DATA */
 let freeUsed = +localStorage.getItem("freeUsed") || 0;
 let streak = +localStorage.getItem("streak") || 0;
 let history = JSON.parse(localStorage.getItem("history") || "[]");
@@ -234,6 +180,7 @@ let history = JSON.parse(localStorage.getItem("history") || "[]");
 let xp = +localStorage.getItem("xp") || 0;
 let level = +localStorage.getItem("level") || 1;
 
+/* ELEMENTS */
 const startBtn = document.getElementById("startBtn");
 const session = document.getElementById("session");
 const setup = document.getElementById("setup");
@@ -249,24 +196,27 @@ const badgeEarned = document.getElementById("badgeEarned");
 const badgesDiv = document.getElementById("badges");
 const badgeLock = document.getElementById("badgeLock");
 
+/* INIT */
 document.getElementById("usage").innerText =
   plan==="free"
   ? "Free sessions left: " + (5-freeUsed)
-  : "Unlimited";
+  : "Pro unlocked — Unlimited";
 
 document.getElementById("streak").innerText = streak;
 document.getElementById("xp").innerText = xp;
 document.getElementById("level").innerText = level;
 
+/* SESSION */
 let score = 100;
 let reasons = [];
 let sessionActive = true;
 let goal = null;
 
+/* START */
 startBtn.onclick = () => {
 
   if(plan==="free" && freeUsed>=5){
-    alert("Limit reached");
+    alert("Free limit reached. Upgrade to continue.");
     return;
   }
 
@@ -286,6 +236,7 @@ startBtn.onclick = () => {
   session.classList.remove("hidden");
 };
 
+/* ACTIONS */
 goodBtn.onclick = () => {};
 
 badBtn.onclick = () => {
@@ -305,6 +256,7 @@ badBtn.onclick = () => {
   }
 };
 
+/* UPDATE */
 function updateUI(){
   scoreEl.innerText = score;
 
@@ -318,12 +270,14 @@ function updateUI(){
   }
 }
 
+/* HARD STOP */
 function triggerHardStop(){
   sessionActive = false;
   alert("You’re no longer trading today.");
   endSession();
 }
 
+/* END */
 endBtn.onclick = () => {
   if(!sessionActive) return;
   endSession();
@@ -367,8 +321,8 @@ function endSession(){
   document.getElementById("grade").innerText = grade;
 
   let passed = false;
-  if(goal === "80"){ passed = score >= 80; }
-  else { passed = reasons.length <= parseInt(goal); }
+  if(goal==="80") passed = score>=80;
+  else passed = reasons.length <= parseInt(goal);
 
   goalResult.innerText = passed ? "✅ Goal achieved" : "❌ Goal failed";
   goalResult.className = passed ? "success" : "fail";
@@ -382,6 +336,7 @@ function endSession(){
   badgeEarned.innerText = earned.length ? "Unlocked: " + earned.join(", ") : "";
 }
 
+/* SAVE NOTE */
 document.getElementById("saveNoteBtn").onclick = () => {
 
   let note = document.getElementById("notes").value;
@@ -397,6 +352,7 @@ document.getElementById("saveNoteBtn").onclick = () => {
   location.reload();
 };
 
+/* BADGES */
 function loadBadges(){
 
   if(plan==="free"){
