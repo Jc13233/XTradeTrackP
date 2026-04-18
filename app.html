@@ -2,8 +2,11 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>TradeTrack</title>
+
+<!-- PWA -->
+<meta name="theme-color" content="#020617">
 
 <style>
 body {
@@ -11,71 +14,60 @@ body {
   font-family: Inter, system-ui;
   background:#020617;
   color:#e2e8f0;
-}
-
-/* NAV */
-.nav {
   display:flex;
-  justify-content:center;
-  gap:20px;
-  padding:20px;
-  border-bottom:1px solid rgba(255,255,255,0.1);
+  flex-direction:column;
+  height:100vh;
 }
 
-.nav button {
-  background:none;
-  color:#94a3b8;
-  border:none;
-  font-size:16px;
-  cursor:pointer;
-  transition:0.2s;
-}
-
-.nav button.active {
-  color:#a78bfa;
-  transform:scale(1.05);
-}
-
-/* CONTAINER */
-.container {
-  max-width:700px;
-  margin:auto;
+/* CONTENT */
+.content {
+  flex:1;
+  overflow-y:auto;
   padding:20px;
 }
 
-/* CARD */
+/* CARDS */
 .card {
   background:rgba(255,255,255,0.05);
   border:1px solid rgba(255,255,255,0.08);
   border-radius:16px;
   padding:20px;
-  margin-top:20px;
-  transition:0.25s;
-}
-
-.card:hover {
-  transform:translateY(-4px);
+  margin-bottom:20px;
 }
 
 /* BUTTONS */
 button {
-  padding:10px 16px;
+  width:100%;
+  padding:14px;
   border:none;
-  border-radius:10px;
-  cursor:pointer;
-  transition:0.2s;
-}
-
-button:hover {
-  transform:translateY(-2px);
-}
-
-button:active {
-  transform:scale(0.96);
+  border-radius:12px;
+  margin-top:10px;
+  font-size:16px;
 }
 
 .primary { background:#7c3aed; color:white; }
 .bad { background:#ef4444; color:white; }
+
+/* NAV BAR */
+.navbar {
+  display:flex;
+  justify-content:space-around;
+  padding:10px;
+  border-top:1px solid rgba(255,255,255,0.1);
+  background:#020617;
+  position:sticky;
+  bottom:0;
+}
+
+.navbar button {
+  background:none;
+  color:#94a3b8;
+  font-size:14px;
+}
+
+.navbar button.active {
+  color:#a78bfa;
+}
 
 /* PROGRESS */
 .progress {
@@ -88,58 +80,31 @@ button:active {
 .bar {
   height:100%;
   background:#7c3aed;
-  transition:width 0.4s ease;
-}
-
-/* FADE */
-.fade {
-  animation:fade 0.3s ease;
-}
-
-@keyframes fade {
-  from {opacity:0; transform:translateY(10px);}
-  to {opacity:1; transform:translateY(0);}
 }
 
 /* ENTRY */
 .entry {
   padding:12px;
-  margin-top:10px;
   background:rgba(255,255,255,0.05);
   border-radius:10px;
-}
-
-.insight {
-  padding:10px;
   margin-top:10px;
-  border-left:3px solid #7c3aed;
-  background:rgba(124,58,237,0.1);
-  border-radius:8px;
 }
 
-.small { color:#94a3b8; font-size:13px; }
-
+/* HIDDEN */
 .hidden { display:none; }
 </style>
 </head>
 
 <body>
 
-<!-- NAV -->
-<div class="nav">
-  <button onclick="showTab('dash')" class="active" id="tabDash">Dashboard</button>
-  <button onclick="showTab('journal')" id="tabJournal">Journal</button>
-  <button onclick="showTab('insights')" id="tabInsights">Insights</button>
-</div>
-
-<div class="container">
+<div class="content">
 
 <!-- DASH -->
-<div id="dash" class="fade">
+<div id="dash">
 
 <div class="card">
 <h2>Session</h2>
-<p id="scoreWrap">Score: <span id="score">100</span>%</p>
+<p>Score: <span id="score">100</span>%</p>
 
 <select id="reason">
 <option value="">Why break?</option>
@@ -149,7 +114,7 @@ button:active {
 <option>Impulse</option>
 </select>
 
-<button class="bad" onclick="bad()">Mistake</button>
+<button class="bad" onclick="bad()">Log Mistake</button>
 <button onclick="endSession()">End Session</button>
 </div>
 
@@ -164,7 +129,7 @@ button:active {
 <button class="primary" onclick="startSession()">Start Session</button>
 
 <a href="https://buy.stripe.com/aFa8wP0XEfQhfb81F16Na01" target="_blank">
-<button class="primary">Upgrade</button>
+<button class="primary">Upgrade to Pro</button>
 </a>
 
 <p id="usage"></p>
@@ -174,6 +139,7 @@ button:active {
 
 <!-- JOURNAL -->
 <div id="journal" class="hidden">
+
 <div class="card">
 <h2>Journal</h2>
 
@@ -183,10 +149,12 @@ button:active {
 
 <div id="journalList"></div>
 </div>
+
 </div>
 
 <!-- INSIGHTS -->
 <div id="insights" class="hidden">
+
 <div class="card">
 <h2>Insights</h2>
 <div id="insightBox"></div>
@@ -196,8 +164,16 @@ button:active {
 <h3>Weekly</h3>
 <p id="weekly"></p>
 </div>
+
 </div>
 
+</div>
+
+<!-- NAV -->
+<div class="navbar">
+<button onclick="showTab('dash')" id="navDash" class="active">Home</button>
+<button onclick="showTab('journal')" id="navJournal">Journal</button>
+<button onclick="showTab('insights')" id="navInsights">Insights</button>
 </div>
 
 <script>
@@ -206,14 +182,11 @@ button:active {
 function showTab(tab){
   ["dash","journal","insights"].forEach(id=>{
     document.getElementById(id).classList.add("hidden");
-    document.getElementById("tab"+id.charAt(0).toUpperCase()+id.slice(1)).classList.remove("active");
+    document.getElementById("nav"+id.charAt(0).toUpperCase()+id.slice(1)).classList.remove("active");
   });
 
-  let el = document.getElementById(tab);
-  el.classList.remove("hidden");
-  el.classList.add("fade");
-
-  document.getElementById("tab"+tab.charAt(0).toUpperCase()+tab.slice(1)).classList.add("active");
+  document.getElementById(tab).classList.remove("hidden");
+  document.getElementById("nav"+tab.charAt(0).toUpperCase()+tab.slice(1)).classList.add("active");
 }
 
 /* DATA */
@@ -224,20 +197,14 @@ let level = +localStorage.getItem("level")||1;
 let freeUsed = +localStorage.getItem("freeUsed")||0;
 
 /* INIT */
-streakEl.innerText = streak;
-levelEl.innerText = level;
+streak.innerText = streak;
+level.innerText = level;
 xpBar.style.width = (xp/(level*100))*100+"%";
 usage.innerText = "Free left: "+(5-freeUsed);
 
 /* SESSION */
 let score = 100;
 let reasons = [];
-
-function animateScore(){
-  let el = document.getElementById("scoreWrap");
-  el.style.transform="scale(1.1)";
-  setTimeout(()=>el.style.transform="scale(1)",150);
-}
 
 function startSession(){
   score = 100;
@@ -251,9 +218,7 @@ function bad(){
 
   score -= 25;
   reasons.push(r);
-
   scoreEl.innerText = score;
-  animateScore();
 
   if(score < 50){
     alert("Hard stop triggered");
@@ -283,8 +248,7 @@ function endSession(){
   history.push({score,reasons,date:Date.now()});
   localStorage.setItem("history", JSON.stringify(history));
 
-  document.body.classList.add("fade");
-  setTimeout(()=>location.reload(),300);
+  location.reload();
 }
 
 /* JOURNAL */
@@ -297,9 +261,9 @@ function loadJournal(type="all"){
     return true;
   }).forEach(h=>{
     journalList.innerHTML+=`
-      <div class="entry fade">
+      <div class="entry">
         ${new Date(h.date).toLocaleDateString()} — ${h.score}%<br>
-        <span class="small">${h.reasons.join(", ")}</span>
+        ${h.reasons.join(", ")}
       </div>`;
   });
 }
@@ -323,7 +287,7 @@ function insights(){
 
   let top = Object.keys(count).sort((a,b)=>count[b]-count[a])[0];
 
-  insightBox.innerHTML = `<div class="insight fade">Main issue: ${top}</div>`;
+  insightBox.innerText = "Main issue: "+top;
 }
 insights();
 
