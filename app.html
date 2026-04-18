@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>XTradeTrackP</title>
+<title>TradeTrack</title>
 
 <style>
 body {
@@ -60,14 +60,6 @@ button {
   border-radius:10px;
 }
 
-.insight {
-  margin-top:10px;
-  padding:10px;
-  border-left:4px solid #7c3aed;
-  background:rgba(124,58,237,0.1);
-  border-radius:8px;
-}
-
 .hidden { display:none; }
 </style>
 </head>
@@ -78,16 +70,11 @@ button {
 
 <h1>TradeTrack</h1>
 
-<!-- INSIGHTS -->
-<div class="card">
-<h3>Your Trading Insights</h3>
-<div id="insights"></div>
-</div>
-
-<!-- WEEKLY -->
+<!-- WEEKLY REPORT -->
 <div class="card">
 <h3>Weekly Performance</h3>
 <p id="weeklyStats"></p>
+<p id="weeklyInsight"></p>
 <p id="comparison"></p>
 </div>
 
@@ -143,8 +130,12 @@ let xp = +localStorage.getItem("xp") || 0;
 let level = +localStorage.getItem("level") || 1;
 
 /* UI */
-streak.innerText = streak;
-level.innerText = level;
+streakEl = document.getElementById("streak");
+levelEl = document.getElementById("level");
+xpBar = document.getElementById("xpBar");
+
+streakEl.innerText = streak;
+levelEl.innerText = level;
 xpBar.style.width = (xp/(level*100))*100 + "%";
 
 /* SESSION */
@@ -217,78 +208,47 @@ function loadJournal(){
 }
 loadJournal();
 
-/* INSIGHTS ENGINE */
-function generateInsights(){
-
-  if(history.length < 3){
-    insights.innerHTML = "<p>Not enough data yet</p>";
-    return;
-  }
-
-  let mistakeCount = {};
-  let lowScoreCount = 0;
-
-  history.forEach(h=>{
-    if(h.score < 75) lowScoreCount++;
-
-    (h.reasons||[]).forEach(r=>{
-      mistakeCount[r] = (mistakeCount[r]||0)+1;
-    });
-  });
-
-  let topMistake = Object.keys(mistakeCount)
-    .sort((a,b)=>mistakeCount[b]-mistakeCount[a])[0];
-
-  let output = "";
-
-  if(topMistake === "Revenge"){
-    output += `<div class="insight">You tend to revenge trade after mistakes.</div>`;
-  }
-
-  if(topMistake === "FOMO"){
-    output += `<div class="insight">You frequently enter trades impulsively (FOMO).</div>`;
-  }
-
-  if(lowScoreCount > history.length/2){
-    output += `<div class="insight">Your discipline is inconsistent. Focus on fewer trades.</div>`;
-  }
-
-  if(output === ""){
-    output = `<div class="insight">You're showing strong discipline. Keep going.</div>`;
-  }
-
-  insights.innerHTML = output;
-}
-
-generateInsights();
-
-/* WEEKLY COMP */
+/* WEEKLY COMPARISON */
 function weeklyReport(){
 
   let now = Date.now();
-  let week = 7*24*60*60*1000;
+  let oneWeek = 7*24*60*60*1000;
 
-  let thisWeek = history.filter(h=>h.date > now-week);
-  let lastWeek = history.filter(h=>h.date > now-2*week && h.date <= now-week);
+  let thisWeek = history.filter(h => h.date > now - oneWeek);
+  let lastWeek = history.filter(h =>
+    h.date > now - (2*oneWeek) && h.date <= now - oneWeek
+  );
 
   function avg(arr){
     if(arr.length===0) return 0;
     return Math.round(arr.reduce((a,b)=>a+b.score,0)/arr.length);
   }
 
-  let a = avg(thisWeek);
-  let b = avg(lastWeek);
+  let avgThis = avg(thisWeek);
+  let avgLast = avg(lastWeek);
 
-  weeklyStats.innerText = `This week avg: ${a}%`;
+  weeklyStats.innerText =
+    `This week: ${thisWeek.length} sessions | Avg ${avgThis}%`;
 
-  let diff = a - b;
+  let diff = avgThis - avgLast;
 
-  if(b===0){
-    comparison.innerText = "No previous data";
+  if(lastWeek.length === 0){
+    comparison.innerText = "No previous data yet";
   } else if(diff > 0){
-    comparison.innerText = `📈 Improved +${diff}%`;
+    comparison.innerText = `📈 Improved by +${diff}% from last week`;
+  } else if(diff < 0){
+    comparison.innerText = `📉 Down ${diff}% — tighten discipline`;
   } else {
-    comparison.innerText = `📉 Down ${diff}%`;
+    comparison.innerText = "No change";
+  }
+
+  /* INSIGHT */
+  if(avgThis < 60){
+    weeklyInsight.innerText = "You are trading emotionally.";
+  } else if(avgThis < 75){
+    weeklyInsight.innerText = "You're inconsistent.";
+  } else {
+    weeklyInsight.innerText = "Strong discipline. Keep it up.";
   }
 }
 
