@@ -59,6 +59,7 @@ button {
 }
 
 .primary { background:#7c3aed; color:white; }
+.good { background:#22c55e; color:white; }
 .bad { background:#ef4444; color:white; }
 
 /* PROGRESS */
@@ -134,6 +135,8 @@ button {
 
   <br><br>
 
+  <!-- ✅ FIXED BUTTONS -->
+  <button class="good" onclick="good()">Disciplined</button>
   <button class="bad" onclick="bad()">Mistake</button>
   <button onclick="endSession()">End Session</button>
 </div>
@@ -220,7 +223,7 @@ levelEl.innerText = level;
 xpBar.style.width = (xp/(level*100))*100+"%";
 usage.innerText = "Free sessions left: "+(5-freeUsed);
 
-/* SESSION STATE */
+/* SESSION */
 let score = 100;
 let reasons = [];
 let active = false;
@@ -239,6 +242,16 @@ function startSession(){
 
   document.getElementById("idleState").classList.add("hidden");
   document.getElementById("activeState").classList.remove("hidden");
+
+  scoreEl.innerText = score;
+}
+
+/* ✅ NEW POSITIVE ACTION */
+function good(){
+  if(!active) return;
+
+  score += 2;
+  if(score > 100) score = 100;
 
   scoreEl.innerText = score;
 }
