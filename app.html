@@ -48,10 +48,11 @@ body {
 }
 
 button {
-  padding:10px 16px;
+  padding:10px 14px;
   border:none;
   border-radius:10px;
   cursor:pointer;
+  margin:5px 5px 0 0;
 }
 
 .primary { background:#7c3aed; color:white; }
@@ -130,13 +131,24 @@ button {
 </div>
 
 <div class="card">
+<h3>Daily Control</h3>
+
+<p>Max mistakes per day: <span id="limitDisplay">3</span></p>
+
+<button onclick="setLimit(2)">2</button>
+<button onclick="setLimit(3)">3</button>
+<button onclick="setLimit(5)">5</button>
+
+<p id="lockStatus" class="small"></p>
+</div>
+
+<div class="card">
 <h3>Stats</h3>
 <p>🔥 Streak: <span id="streak">0</span></p>
 <p>⭐ Level: <span id="level">1</span></p>
 <div class="progress"><div id="xpBar" class="bar"></div></div>
 </div>
 
-<!-- GRAPH -->
 <div class="card">
 <h3>Performance (Last 7)</h3>
 <canvas id="chart"></canvas>
@@ -200,6 +212,18 @@ let xp = +localStorage.getItem("xp")||0;
 let level = +localStorage.getItem("level")||1;
 let freeUsed = +localStorage.getItem("freeUsed")||0;
 
+/* DAILY LOCK */
+let today = new Date().toDateString();
+let savedDay = localStorage.getItem("day");
+let mistakesToday = +localStorage.getItem("mistakesToday")||0;
+let maxMistakes = +localStorage.getItem("maxMistakes")||3;
+
+if(savedDay !== today){
+  mistakesToday = 0;
+  localStorage.setItem("mistakesToday", 0);
+  localStorage.setItem("day", today);
+}
+
 /* ELEMENTS */
 const streakEl = document.getElementById("streak");
 const levelEl = document.getElementById("level");
@@ -207,12 +231,34 @@ const xpBar = document.getElementById("xpBar");
 const usage = document.getElementById("usage");
 const scoreEl = document.getElementById("score");
 const reason = document.getElementById("reason");
+const lockStatus = document.getElementById("lockStatus");
+const limitDisplay = document.getElementById("limitDisplay");
 
 /* INIT */
 streakEl.innerText = streak;
 levelEl.innerText = level;
 xpBar.style.width = (xp/(level*100))*100+"%";
 usage.innerText = "Free sessions left: "+(5-freeUsed);
+limitDisplay.innerText = maxMistakes;
+
+/* LOCK UI */
+function updateLock(){
+  if(mistakesToday >= maxMistakes){
+    lockStatus.innerText = "🔒 Locked for today";
+    return true;
+  } else {
+    lockStatus.innerText = `Mistakes today: ${mistakesToday}/${maxMistakes}`;
+    return false;
+  }
+}
+updateLock();
+
+function setLimit(n){
+  maxMistakes = n;
+  localStorage.setItem("maxMistakes", n);
+  limitDisplay.innerText = n;
+  updateLock();
+}
 
 /* SESSION */
 let score = 100;
@@ -221,6 +267,7 @@ let active = false;
 
 function startSession(){
   if(freeUsed>=5) return alert("Upgrade required");
+  if(updateLock()) return alert("You are locked for today");
 
   score = 100;
   reasons = [];
@@ -241,6 +288,10 @@ function bad(){
   score -= 25;
   reasons.push(r);
   scoreEl.innerText = score;
+
+  mistakesToday++;
+  localStorage.setItem("mistakesToday", mistakesToday);
+  updateLock();
 
   if(score < 50){
     alert("Hard stop triggered");
@@ -276,25 +327,19 @@ function endSession(){
 
 /* GRAPH */
 let last7 = history.slice(-7);
-let labels = last7.map((_,i)=>"S"+(i+1));
-let data = last7.map(h=>h.score);
-
 new Chart(document.getElementById("chart"), {
   type:"line",
   data:{
-    labels:labels,
+    labels:last7.map((_,i)=>"S"+(i+1)),
     datasets:[{
-      label:"Score",
-      data:data,
+      data:last7.map(h=>h.score),
       borderColor:"#7c3aed",
       tension:0.3
     }]
   },
   options:{
     plugins:{ legend:{display:false}},
-    scales:{
-      y:{ min:0, max:100 }
-    }
+    scales:{ y:{min:0,max:100}}
   }
 });
 
@@ -339,7 +384,6 @@ insights();
 function weekly(){
   let now=Date.now();
   let w=7*24*60*60*1000;
-
   let week = history.filter(h=>h.date>now-w);
 
   let avg = week.length
