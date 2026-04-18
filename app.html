@@ -14,7 +14,7 @@ body {
 }
 
 .container {
-  max-width:720px;
+  max-width:800px;
   margin:auto;
   padding:40px 20px;
 }
@@ -36,6 +36,7 @@ button {
 }
 
 .start { background:#7c3aed; color:white; }
+.good { background:#22c55e; }
 .bad { background:#ef4444; }
 
 .entry {
@@ -45,6 +46,8 @@ button {
   border-radius:10px;
 }
 
+.small { font-size:12px; color:#94a3b8; }
+
 .pattern {
   padding:10px;
   margin-top:10px;
@@ -53,9 +56,16 @@ button {
   border-radius:8px;
 }
 
-.small {
-  font-size:12px;
-  color:#94a3b8;
+.progress {
+  height:10px;
+  background:#020617;
+  border-radius:10px;
+  margin-top:10px;
+}
+
+.bar {
+  height:100%;
+  background:#7c3aed;
 }
 
 .hidden { display:none; }
@@ -68,9 +78,34 @@ button {
 
 <h1>TradeTrack</h1>
 
+<!-- STATS -->
+<div class="card">
+<p>🔥 Streak: <span id="streak">0</span></p>
+<p>⭐ Level: <span id="level">1</span></p>
+<div class="progress"><div id="xpBar" class="bar"></div></div>
+<p id="usage"></p>
+</div>
+
+<!-- WEEKLY -->
+<div class="card">
+<h3>Weekly Performance</h3>
+<p id="weeklyStats"></p>
+<p id="comparison"></p>
+</div>
+
+<!-- INSIGHTS -->
+<div class="card">
+<h3>Insights</h3>
+<div id="insights"></div>
+</div>
+
 <!-- SETUP -->
 <div class="card" id="setup">
 <button class="start" id="startBtn">Start Session</button>
+
+<a href="https://buy.stripe.com/aFa8wP0XEfQhfb81F16Na01" target="_blank">
+<button class="start">Upgrade to Pro</button>
+</a>
 </div>
 
 <!-- SESSION -->
@@ -92,25 +127,23 @@ button {
 <!-- RESULT -->
 <div class="card hidden" id="result">
 <h2 id="grade"></h2>
-
 <textarea id="notes" placeholder="What went wrong?"></textarea>
 <button id="saveNoteBtn">Save Journal</button>
 </div>
 
-<!-- JOURNAL -->
+<!-- JOURNAL INSIGHTS -->
 <div class="card">
-<h3>Journal Insights</h3>
+<h3>Journal Patterns</h3>
 <div id="patterns"></div>
 </div>
 
+<!-- JOURNAL -->
 <div class="card">
 <h3>Journal</h3>
 
-<div>
 <button onclick="filterJournal('all')">All</button>
 <button onclick="filterJournal('good')">Good</button>
 <button onclick="filterJournal('bad')">Bad</button>
-</div>
 
 <div id="journalContent"></div>
 </div>
@@ -119,36 +152,73 @@ button {
 
 <script>
 
+/* PLAN */
+let plan = localStorage.getItem("plan") || "free";
+let freeUsed = +localStorage.getItem("freeUsed") || 0;
+
 /* DATA */
 let history = JSON.parse(localStorage.getItem("history") || "[]");
+let streak = +localStorage.getItem("streak") || 0;
+let xp = +localStorage.getItem("xp") || 0;
+let level = +localStorage.getItem("level") || 1;
+
+/* UI */
+streakEl.innerText = streak;
+levelEl.innerText = level;
+xpBar.style.width = (xp/(level*100))*100 + "%";
+
+usage.innerText =
+  plan==="free"
+  ? `Free sessions left: ${5-freeUsed}`
+  : "Pro unlocked";
 
 /* SESSION */
 let score = 100;
 let reasons = [];
 
-/* START */
 startBtn.onclick = () => {
+
+  if(plan==="free" && freeUsed >= 5){
+    alert("Upgrade to continue");
+    return;
+  }
+
   setup.classList.add("hidden");
   session.classList.remove("hidden");
 };
 
-/* BAD */
 badBtn.onclick = () => {
   let r = reason.value;
   if(!r){ alert("Pick reason"); return; }
 
   score -= 25;
   reasons.push(r);
+  scoreEl.innerText = score;
 
   if(score < 50){
+    alert("Hard stop triggered");
     endSession();
   }
 };
 
-/* END */
 endBtn.onclick = () => endSession();
 
 function endSession(){
+
+  if(plan==="free") freeUsed++;
+  localStorage.setItem("freeUsed", freeUsed);
+
+  if(score>=75){ streak++; } else { streak=0; }
+  localStorage.setItem("streak", streak);
+
+  xp += score;
+  if(xp >= level*100){
+    xp -= level*100;
+    level++;
+  }
+
+  localStorage.setItem("xp", xp);
+  localStorage.setItem("level", level);
 
   history.push({
     score:score,
@@ -177,24 +247,21 @@ saveNoteBtn.onclick = () => {
 
 /* JOURNAL */
 function loadJournal(filter="all"){
-
   journalContent.innerHTML = "";
 
-  let filtered = history.slice().reverse().filter(h=>{
+  history.slice().reverse().filter(h=>{
     if(filter==="good") return h.score>=75;
     if(filter==="bad") return h.score<75;
     return true;
-  });
+  }).forEach((h,i)=>{
 
-  filtered.forEach((h,i)=>{
-
-    let index = history.length - 1 - i;
+    let index = history.length-1-i;
 
     journalContent.innerHTML += `
       <div class="entry">
         <strong>${new Date(h.date).toLocaleDateString()}</strong><br>
         Score: ${h.score}%<br>
-        Mistakes: ${(h.reasons||[]).join(", ") || "None"}<br>
+        ${(h.reasons||[]).join(", ")}<br>
         <div class="small">${h.note || "No notes"}</div>
         <button onclick="deleteEntry(${index})">Delete</button>
       </div>
@@ -208,57 +275,71 @@ function deleteEntry(i){
   loadJournal();
 }
 
-/* PATTERN ENGINE */
-function generatePatterns(){
+function filterJournal(type){ loadJournal(type); }
+
+/* INSIGHTS */
+function insightsEngine(){
 
   if(history.length < 3){
-    patterns.innerHTML = "<p>Not enough data yet</p>";
+    insights.innerHTML = "Not enough data";
     return;
   }
 
-  let mistakeCount = {};
-  let lowScore = 0;
-  let multiMistakeSessions = 0;
-
+  let count = {};
   history.forEach(h=>{
-    if(h.score < 75) lowScore++;
-
-    if((h.reasons||[]).length >= 2){
-      multiMistakeSessions++;
-    }
-
     (h.reasons||[]).forEach(r=>{
-      mistakeCount[r] = (mistakeCount[r]||0)+1;
+      count[r] = (count[r]||0)+1;
     });
   });
 
-  let topMistake = Object.keys(mistakeCount)
-    .sort((a,b)=>mistakeCount[b]-mistakeCount[a])[0];
+  let top = Object.keys(count).sort((a,b)=>count[b]-count[a])[0];
 
-  let output = "";
-
-  if(topMistake){
-    output += `<div class="pattern">Most common mistake: ${topMistake}</div>`;
-  }
-
-  if(lowScore > history.length/2){
-    output += `<div class="pattern">You often lose discipline (score <75%)</div>`;
-  }
-
-  if(multiMistakeSessions > history.length/3){
-    output += `<div class="pattern">You tend to stack mistakes in sessions</div>`;
-  }
-
-  if(output === ""){
-    output = `<div class="pattern">Strong discipline pattern detected</div>`;
-  }
-
-  patterns.innerHTML = output;
+  insights.innerHTML = `Main issue: ${top}`;
 }
 
-generatePatterns();
+/* PATTERNS */
+function patternsEngine(){
 
+  let low = history.filter(h=>h.score<75).length;
+
+  if(low > history.length/2){
+    patterns.innerHTML = "You often lose discipline";
+  } else {
+    patterns.innerHTML = "Stable discipline pattern";
+  }
+}
+
+/* WEEKLY */
+function weeklyReport(){
+
+  let now = Date.now();
+  let w = 7*24*60*60*1000;
+
+  let a = history.filter(h=>h.date>now-w);
+  let b = history.filter(h=>h.date>now-2*w && h.date<=now-w);
+
+  let avg = arr => arr.length
+    ? Math.round(arr.reduce((x,y)=>x+y.score,0)/arr.length)
+    : 0;
+
+  let avgA = avg(a);
+  let avgB = avg(b);
+
+  weeklyStats.innerText = `This week avg: ${avgA}%`;
+
+  let diff = avgA - avgB;
+
+  comparison.innerText =
+    avgB===0 ? "No previous data"
+    : diff>0 ? `Improved +${diff}%`
+    : `Down ${diff}%`;
+}
+
+/* INIT */
 loadJournal();
+insightsEngine();
+patternsEngine();
+weeklyReport();
 
 </script>
 
