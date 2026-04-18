@@ -56,6 +56,16 @@ canvas {
   border-radius:10px;
 }
 
+.warning {
+  margin-top:10px;
+  font-weight:bold;
+  color:#facc15;
+}
+
+.danger {
+  color:#ef4444;
+}
+
 .upgrade { color:#a78bfa; }
 </style>
 </head>
@@ -93,6 +103,8 @@ canvas {
 <div class="card hidden" id="session">
 
 <p>Score: <span id="score">100</span>%</p>
+
+<div id="warning" class="warning"></div>
 
 <button class="good" id="goodBtn">Good</button>
 
@@ -176,6 +188,7 @@ const setup = document.getElementById("setup");
 const result = document.getElementById("result");
 
 const scoreEl = document.getElementById("score");
+const warningEl = document.getElementById("warning");
 
 const notesInput = document.getElementById("notes");
 const saveNoteBtn = document.getElementById("saveNoteBtn");
@@ -199,7 +212,9 @@ document.getElementById("level").innerText = level;
 /* SESSION */
 let score = 100;
 let reasons=[];
+let sessionActive = true;
 
+/* START */
 startBtn.onclick = () => {
 
   if(plan==="free" && freeUsed>=5){
@@ -216,17 +231,64 @@ startBtn.onclick = () => {
   session.classList.remove("hidden");
 };
 
-goodBtn.onclick = () => {};
-
-badBtn.onclick = () => {
-  let r = reason.value;
-  if(!r){ alert("Pick reason"); return; }
-  score -= 25;
-  reasons.push(r);
-  scoreEl.innerText = score;
+/* GOOD */
+goodBtn.onclick = () => {
+  if(!sessionActive) return;
 };
 
+/* BAD */
+badBtn.onclick = () => {
+
+  if(!sessionActive) return;
+
+  let r = reason.value;
+  if(!r){
+    alert("Pick reason");
+    return;
+  }
+
+  score -= 25;
+  reasons.push(r);
+
+  updateUI();
+
+  /* HARD STOP */
+  if(score < 50){
+    triggerHardStop();
+  }
+};
+
+/* UPDATE UI */
+function updateUI(){
+  scoreEl.innerText = score;
+
+  if(score < 75 && score >= 50){
+    warningEl.innerText = "⚠️ You're slipping";
+  }
+
+  if(score < 50){
+    warningEl.innerText = "🚨 Discipline breaking down";
+    warningEl.classList.add("danger");
+  }
+}
+
+/* HARD STOP */
+function triggerHardStop(){
+
+  sessionActive = false;
+
+  alert("You’re no longer trading today.");
+
+  endSession();
+}
+
+/* END SESSION */
 endBtn.onclick = () => {
+  if(!sessionActive) return;
+  endSession();
+};
+
+function endSession(){
 
   if(plan==="free"){
     freeUsed++;
@@ -258,8 +320,15 @@ endBtn.onclick = () => {
 
   session.classList.add("hidden");
   result.classList.remove("hidden");
-};
 
+  let grade = score>=90?"A":score>=75?"B":score>=50?"C":"D";
+
+  document.getElementById("grade").innerText = grade;
+  document.getElementById("resultTitle").innerText =
+    score>=75 ? "Strong Discipline" : "Session Cut Short";
+}
+
+/* SAVE NOTE */
 saveNoteBtn.onclick = () => {
   history[history.length-1].note = notesInput.value;
   localStorage.setItem("history", JSON.stringify(history));
@@ -276,14 +345,13 @@ function drawChart(){
   }
 
   let ctx = chart.getContext("2d");
-
   let data = history.slice(-7).map(h=>h.score);
 
   ctx.clearRect(0,0,300,150);
 
   ctx.beginPath();
   data.forEach((val,i)=>{
-    let x = i * 40 + 10;
+    let x = i*40 + 10;
     let y = 150 - val;
     if(i===0) ctx.moveTo(x,y);
     else ctx.lineTo(x,y);
