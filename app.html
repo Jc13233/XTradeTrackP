@@ -2,11 +2,10 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>TradeTrack</title>
 
-<!-- PWA -->
-<meta name="theme-color" content="#020617">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
 body {
@@ -14,62 +13,50 @@ body {
   font-family: Inter, system-ui;
   background:#020617;
   color:#e2e8f0;
-  display:flex;
-  flex-direction:column;
-  height:100vh;
 }
 
-/* CONTENT */
-.content {
-  flex:1;
-  overflow-y:auto;
+.nav {
+  display:flex;
+  justify-content:center;
+  gap:20px;
+  padding:20px;
+  border-bottom:1px solid rgba(255,255,255,0.1);
+}
+
+.nav button {
+  background:none;
+  color:#94a3b8;
+  border:none;
+  font-size:16px;
+  cursor:pointer;
+}
+
+.nav button.active { color:#a78bfa; }
+
+.container {
+  max-width:700px;
+  margin:auto;
   padding:20px;
 }
 
-/* CARDS */
 .card {
   background:rgba(255,255,255,0.05);
   border:1px solid rgba(255,255,255,0.08);
   border-radius:16px;
   padding:20px;
-  margin-bottom:20px;
+  margin-top:20px;
 }
 
-/* BUTTONS */
 button {
-  width:100%;
-  padding:14px;
+  padding:10px 16px;
   border:none;
-  border-radius:12px;
-  margin-top:10px;
-  font-size:16px;
+  border-radius:10px;
+  cursor:pointer;
 }
 
 .primary { background:#7c3aed; color:white; }
 .bad { background:#ef4444; color:white; }
 
-/* NAV BAR */
-.navbar {
-  display:flex;
-  justify-content:space-around;
-  padding:10px;
-  border-top:1px solid rgba(255,255,255,0.1);
-  background:#020617;
-  position:sticky;
-  bottom:0;
-}
-
-.navbar button {
-  background:none;
-  color:#94a3b8;
-  font-size:14px;
-}
-
-.navbar button.active {
-  color:#a78bfa;
-}
-
-/* PROGRESS */
 .progress {
   height:8px;
   background:#020617;
@@ -82,40 +69,64 @@ button {
   background:#7c3aed;
 }
 
-/* ENTRY */
+.hidden { display:none; }
+
 .entry {
   padding:12px;
+  margin-top:10px;
   background:rgba(255,255,255,0.05);
   border-radius:10px;
-  margin-top:10px;
 }
 
-/* HIDDEN */
-.hidden { display:none; }
+.insight {
+  padding:10px;
+  margin-top:10px;
+  border-left:3px solid #7c3aed;
+  background:rgba(124,58,237,0.1);
+  border-radius:8px;
+}
+
+.small { color:#94a3b8; font-size:13px; }
 </style>
 </head>
 
 <body>
 
-<div class="content">
+<div class="nav">
+  <button onclick="showTab('dash')" class="active" id="tabDash">Dashboard</button>
+  <button onclick="showTab('journal')" id="tabJournal">Journal</button>
+  <button onclick="showTab('insights')" id="tabInsights">Insights</button>
+</div>
+
+<div class="container">
 
 <!-- DASH -->
 <div id="dash">
 
 <div class="card">
 <h2>Session</h2>
-<p>Score: <span id="score">100</span>%</p>
 
-<select id="reason">
-<option value="">Why break?</option>
-<option>FOMO</option>
-<option>Revenge</option>
-<option>Boredom</option>
-<option>Impulse</option>
-</select>
+<div id="idleState">
+  <p class="small">No active session</p>
+  <button class="primary" onclick="startSession()">Start Session</button>
+</div>
 
-<button class="bad" onclick="bad()">Log Mistake</button>
-<button onclick="endSession()">End Session</button>
+<div id="activeState" class="hidden">
+  <p>Score: <span id="score">100</span>%</p>
+
+  <select id="reason">
+    <option value="">Why break?</option>
+    <option>FOMO</option>
+    <option>Revenge</option>
+    <option>Boredom</option>
+    <option>Impulse</option>
+  </select>
+
+  <br><br>
+
+  <button class="bad" onclick="bad()">Mistake</button>
+  <button onclick="endSession()">End Session</button>
+</div>
 </div>
 
 <div class="card">
@@ -125,13 +136,16 @@ button {
 <div class="progress"><div id="xpBar" class="bar"></div></div>
 </div>
 
+<!-- GRAPH -->
 <div class="card">
-<button class="primary" onclick="startSession()">Start Session</button>
+<h3>Performance (Last 7)</h3>
+<canvas id="chart"></canvas>
+</div>
 
+<div class="card">
 <a href="https://buy.stripe.com/aFa8wP0XEfQhfb81F16Na01" target="_blank">
-<button class="primary">Upgrade to Pro</button>
+<button class="primary">Upgrade to Pro (£15/mo)</button>
 </a>
-
 <p id="usage"></p>
 </div>
 
@@ -139,7 +153,6 @@ button {
 
 <!-- JOURNAL -->
 <div id="journal" class="hidden">
-
 <div class="card">
 <h2>Journal</h2>
 
@@ -149,7 +162,6 @@ button {
 
 <div id="journalList"></div>
 </div>
-
 </div>
 
 <!-- INSIGHTS -->
@@ -169,24 +181,16 @@ button {
 
 </div>
 
-<!-- NAV -->
-<div class="navbar">
-<button onclick="showTab('dash')" id="navDash" class="active">Home</button>
-<button onclick="showTab('journal')" id="navJournal">Journal</button>
-<button onclick="showTab('insights')" id="navInsights">Insights</button>
-</div>
-
 <script>
 
 /* TAB */
 function showTab(tab){
   ["dash","journal","insights"].forEach(id=>{
     document.getElementById(id).classList.add("hidden");
-    document.getElementById("nav"+id.charAt(0).toUpperCase()+id.slice(1)).classList.remove("active");
+    document.getElementById("tab"+id.charAt(0).toUpperCase()+id.slice(1)).classList.remove("active");
   });
-
   document.getElementById(tab).classList.remove("hidden");
-  document.getElementById("nav"+tab.charAt(0).toUpperCase()+tab.slice(1)).classList.add("active");
+  document.getElementById("tab"+tab.charAt(0).toUpperCase()+tab.slice(1)).classList.add("active");
 }
 
 /* DATA */
@@ -196,23 +200,41 @@ let xp = +localStorage.getItem("xp")||0;
 let level = +localStorage.getItem("level")||1;
 let freeUsed = +localStorage.getItem("freeUsed")||0;
 
+/* ELEMENTS */
+const streakEl = document.getElementById("streak");
+const levelEl = document.getElementById("level");
+const xpBar = document.getElementById("xpBar");
+const usage = document.getElementById("usage");
+const scoreEl = document.getElementById("score");
+const reason = document.getElementById("reason");
+
 /* INIT */
-streak.innerText = streak;
-level.innerText = level;
+streakEl.innerText = streak;
+levelEl.innerText = level;
 xpBar.style.width = (xp/(level*100))*100+"%";
-usage.innerText = "Free left: "+(5-freeUsed);
+usage.innerText = "Free sessions left: "+(5-freeUsed);
 
 /* SESSION */
 let score = 100;
 let reasons = [];
+let active = false;
 
 function startSession(){
+  if(freeUsed>=5) return alert("Upgrade required");
+
   score = 100;
   reasons = [];
+  active = true;
+
+  idleState.classList.add("hidden");
+  activeState.classList.remove("hidden");
+
   scoreEl.innerText = score;
 }
 
 function bad(){
+  if(!active) return;
+
   let r = reason.value;
   if(!r) return alert("Pick reason");
 
@@ -227,8 +249,9 @@ function bad(){
 }
 
 function endSession(){
+  if(!active) return;
 
-  if(freeUsed>=5) return alert("Upgrade required");
+  active = false;
 
   freeUsed++;
   localStorage.setItem("freeUsed", freeUsed);
@@ -251,10 +274,33 @@ function endSession(){
   location.reload();
 }
 
+/* GRAPH */
+let last7 = history.slice(-7);
+let labels = last7.map((_,i)=>"S"+(i+1));
+let data = last7.map(h=>h.score);
+
+new Chart(document.getElementById("chart"), {
+  type:"line",
+  data:{
+    labels:labels,
+    datasets:[{
+      label:"Score",
+      data:data,
+      borderColor:"#7c3aed",
+      tension:0.3
+    }]
+  },
+  options:{
+    plugins:{ legend:{display:false}},
+    scales:{
+      y:{ min:0, max:100 }
+    }
+  }
+});
+
 /* JOURNAL */
 function loadJournal(type="all"){
   journalList.innerHTML="";
-
   history.slice().reverse().filter(h=>{
     if(type==="good") return h.score>=75;
     if(type==="bad") return h.score<75;
@@ -263,11 +309,10 @@ function loadJournal(type="all"){
     journalList.innerHTML+=`
       <div class="entry">
         ${new Date(h.date).toLocaleDateString()} — ${h.score}%<br>
-        ${h.reasons.join(", ")}
+        <span class="small">${h.reasons.join(", ")}</span>
       </div>`;
   });
 }
-
 function filter(t){ loadJournal(t); }
 loadJournal();
 
@@ -286,8 +331,7 @@ function insights(){
   });
 
   let top = Object.keys(count).sort((a,b)=>count[b]-count[a])[0];
-
-  insightBox.innerText = "Main issue: "+top;
+  insightBox.innerHTML=`<div class="insight">Main issue: ${top}</div>`;
 }
 insights();
 
@@ -302,8 +346,7 @@ function weekly(){
     ? Math.round(week.reduce((a,b)=>a+b.score,0)/week.length)
     : 0;
 
-  document.getElementById("weekly").innerText =
-    "This week avg: "+avg+"%";
+  weekly.innerText="This week avg: "+avg+"%";
 }
 weekly();
 
