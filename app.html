@@ -28,7 +28,6 @@ body {
   background:none;
   border:none;
   color:#64748b;
-  font-size:15px;
   cursor:pointer;
 }
 
@@ -41,10 +40,8 @@ body {
   padding:30px 20px;
 }
 
-/* HERO GRAPH */
 .hero {
   background:rgba(255,255,255,0.04);
-  border:1px solid rgba(255,255,255,0.08);
   border-radius:20px;
   padding:25px;
   margin-bottom:25px;
@@ -60,52 +57,33 @@ body {
 /* CARD */
 .card {
   background:rgba(255,255,255,0.04);
-  border:1px solid rgba(255,255,255,0.08);
   border-radius:16px;
   padding:20px;
 }
 
 /* BUTTONS */
 button {
-  padding:12px 16px;
+  padding:12px;
   border:none;
   border-radius:10px;
   cursor:pointer;
-}
-
-.primary {
-  background:#7c3aed;
-  color:white;
-  width:100%;
-}
-
-.bad {
-  background:#ef4444;
-  color:white;
-  margin-top:10px;
-  width:100%;
-}
-
-/* PROGRESS */
-.progress {
-  height:8px;
-  background:#020617;
-  border-radius:10px;
   margin-top:10px;
 }
 
-.bar {
-  height:100%;
-  background:#7c3aed;
-}
+.primary { background:#22c55e; color:white; width:100%; }
+.bad { background:#ef4444; color:white; width:100%; }
 
-/* HIDDEN */
 .hidden { display:none; }
 
-/* TEXT */
 .small {
   color:#64748b;
   font-size:13px;
+}
+
+.timer {
+  font-size:18px;
+  margin-bottom:10px;
+  color:#a78bfa;
 }
 </style>
 </head>
@@ -113,15 +91,10 @@ button {
 <body>
 
 <div class="nav">
-  <button onclick="showTab('dash')" class="active" id="tabDash">Dashboard</button>
-  <button onclick="showTab('journal')" id="tabJournal">Journal</button>
-  <button onclick="showTab('insights')" id="tabInsights">Insights</button>
+  <button class="active">Dashboard</button>
 </div>
 
 <div class="container">
-
-<!-- DASHBOARD -->
-<div id="dash">
 
 <!-- GRAPH -->
 <div class="hero">
@@ -131,7 +104,7 @@ button {
 
 <div class="grid">
 
-<!-- LEFT -->
+<!-- SESSION -->
 <div class="card">
   <h3>Session</h3>
 
@@ -141,21 +114,23 @@ button {
   </div>
 
   <div id="activeState" class="hidden">
-    <h2 id="score">100%</h2>
 
+    <div class="timer" id="timer">00:00</div>
+    <h1 id="score">100%</h1>
+
+    <button class="primary" onclick="good()">Stayed Disciplined</button>
     <button class="bad" onclick="bad()">Mistake</button>
     <button onclick="endSession()">End Session</button>
+
   </div>
 </div>
 
-<!-- RIGHT -->
+<!-- SIDE -->
 <div>
 
 <div class="card">
   <h3>Stats</h3>
-  <p>🔥 Streak: <span id="streak">0</span></p>
-  <p>⭐ Level: <span id="level">1</span></p>
-  <div class="progress"><div id="xpBar" class="bar"></div></div>
+  <p>Sessions: <span id="sessions">0</span></p>
 </div>
 
 <div class="card">
@@ -171,89 +146,103 @@ button {
 
 </div>
 
-<!-- JOURNAL -->
-<div id="journal" class="hidden">
-<div class="card">
-<h2>Journal</h2>
-<div id="journalList"></div>
-</div>
-</div>
-
-<!-- INSIGHTS -->
-<div id="insights" class="hidden">
-<div class="card">
-<h2>Insights</h2>
-<div id="insightBox"></div>
-</div>
-</div>
-
-</div>
-
 <script>
-
-/* TAB */
-function showTab(tab){
-  ["dash","journal","insights"].forEach(id=>{
-    document.getElementById(id).classList.add("hidden");
-    document.getElementById("tab"+id.charAt(0).toUpperCase()+id.slice(1)).classList.remove("active");
-  });
-  document.getElementById(tab).classList.remove("hidden");
-  document.getElementById("tab"+tab.charAt(0).toUpperCase()+tab.slice(1)).classList.add("active");
-}
 
 /* DATA */
 let history = JSON.parse(localStorage.getItem("history")||"[]");
-let streak = +localStorage.getItem("streak")||0;
-let xp = +localStorage.getItem("xp")||0;
-let level = +localStorage.getItem("level")||1;
 let freeUsed = +localStorage.getItem("freeUsed")||0;
 
-/* INIT */
-streak.innerText = streak;
-level.innerText = level;
-xpBar.style.width = (xp/(level*100))*100+"%";
-usage.innerText = "Free sessions left: "+(5-freeUsed);
+/* UI INIT */
+document.getElementById("sessions").innerText = history.length;
+document.getElementById("usage").innerText = "Free sessions left: "+(5-freeUsed);
 
 /* SESSION */
 let score = 100;
 let active = false;
+let timerInterval;
+let seconds = 0;
 
+/* START */
 function startSession(){
   if(freeUsed>=5) return alert("Upgrade required");
 
   active = true;
   score = 100;
+  seconds = 0;
 
   idleState.classList.add("hidden");
   activeState.classList.remove("hidden");
 
-  document.getElementById("score").innerText = score + "%";
+  updateScore();
+  startTimer();
 }
 
+/* TIMER */
+function startTimer(){
+  timerInterval = setInterval(()=>{
+    seconds++;
+
+    // reward passive discipline
+    score += 1;
+    if(score > 100) score = 100;
+
+    updateScore();
+
+    let min = String(Math.floor(seconds/60)).padStart(2,"0");
+    let sec = String(seconds%60).padStart(2,"0");
+    timer.innerText = `${min}:${sec}`;
+
+  },1000);
+}
+
+/* GOOD */
+function good(){
+  if(!active) return;
+
+  score += 3;
+  if(score > 100) score = 100;
+
+  updateScore();
+}
+
+/* BAD */
 function bad(){
   if(!active) return;
 
   score -= 25;
-  document.getElementById("score").innerText = score + "%";
+  updateScore();
 
   if(score < 50) endSession();
 }
 
+/* END */
 function endSession(){
   if(!active) return;
 
+  clearInterval(timerInterval);
   active = false;
+
   freeUsed++;
   localStorage.setItem("freeUsed", freeUsed);
 
-  history.push({score,date:Date.now()});
+  history.push({
+    score: score,
+    date: Date.now()
+  });
+
   localStorage.setItem("history", JSON.stringify(history));
 
   location.reload();
 }
 
+/* UPDATE SCORE */
+function updateScore(){
+  document.getElementById("score").innerText = score + "%";
+}
+
 /* GRAPH */
 let last7 = history.slice(-7);
+
 new Chart(document.getElementById("chart"), {
   type:"line",
   data:{
@@ -269,11 +258,6 @@ new Chart(document.getElementById("chart"), {
     scales:{y:{min:0,max:100}}
   }
 });
-
-/* JOURNAL */
-journalList.innerHTML = history.slice().reverse().map(h =>
-  `<div>${new Date(h.date).toLocaleDateString()} — ${h.score}%</div>`
-).join("");
 
 </script>
 
