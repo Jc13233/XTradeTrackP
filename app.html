@@ -42,33 +42,12 @@ button {
 .good { background: linear-gradient(135deg,#22c55e,#16a34a); }
 .bad { background: linear-gradient(135deg,#ef4444,#dc2626); }
 
-.stat-box {
-  display: flex;
-  justify-content: space-between;
-  margin-top: 15px;
-}
-
-.stat {
-  width: 23%;
-  background: rgba(0,0,0,0.4);
-  padding: 10px;
-  border-radius: 10px;
-}
-
-.progress {
-  height: 10px;
-  background: #111;
-  border-radius: 10px;
-  margin-top: 10px;
-}
-
-.bar {
-  height: 100%;
-  width: 100%;
-  background: linear-gradient(90deg,#22c55e,#4f7cff);
-}
-
 .hidden { display:none; }
+
+.locked {
+  color: #ef4444;
+  font-weight: bold;
+}
 
 .history-item {
   text-align:left;
@@ -96,7 +75,9 @@ button {
 <label><input type="checkbox" id="c4"> Follow system</label>
 
 <br>
-<button class="start" onclick="startSession()">Start Session</button>
+<button class="start" id="startBtn" onclick="startSession()">Start Session</button>
+
+<p id="lockMessage" class="locked"></p>
 
 <p>🔥 Streak: <span id="streak">0</span></p>
 
@@ -111,14 +92,9 @@ button {
 <!-- SESSION -->
 <div class="card hidden" id="session">
 
-<div class="stat-box">
-<div class="stat">Trades<br><span id="trades">0</span></div>
-<div class="stat">Mistakes<br><span id="breaks">0</span></div>
-<div class="stat">Score<br><span id="score">100</span>%</div>
-<div class="stat">Best<br><span id="bestStreak">0</span></div>
-</div>
-
-<div class="progress"><div id="bar" class="bar"></div></div>
+<p>Trades: <span id="trades">0</span></p>
+<p>Mistakes: <span id="breaks">0</span></p>
+<p>Score: <span id="score">100</span>%</p>
 
 <button class="good" onclick="good()">Executed Discipline</button>
 <button class="bad" onclick="bad()">Broke System</button>
@@ -139,14 +115,16 @@ button {
 
 </div>
 
-<!-- STATS -->
+<!-- WEEKLY REPORT -->
 <div class="card">
 
-<h3>Your Stats</h3>
+<h3>Weekly Report</h3>
 
-<p>Total Sessions: <span id="totalSessions">0</span></p>
-<p>Average Score: <span id="avgScore">0</span>%</p>
-<p>Best Streak: <span id="bestStreak2">0</span></p>
+<p>Sessions: <span id="weekSessions">0</span></p>
+<p>Average Score: <span id="weekAvg">0</span>%</p>
+<p>Mistakes: <span id="weekMistakes">0</span></p>
+
+<p id="weekFeedback"></p>
 
 </div>
 
@@ -161,25 +139,34 @@ button {
 </div>
 
 <script>
-let plan = "free";
+let today = new Date().toDateString();
+let lastSessionDate = localStorage.getItem("lastSessionDate");
+
+let locked = lastSessionDate === today;
+
+if(locked){
+  startBtn.disabled = true;
+  lockMessage.innerText = "You are done for today. Come back tomorrow.";
+}
+
 let freeUsed = localStorage.getItem("freeUsed") || 0;
-
 let streak = localStorage.getItem("streak") || 0;
-let bestStreak = localStorage.getItem("bestStreak") || 0;
-
 let history = JSON.parse(localStorage.getItem("history") || "[]");
 
-document.getElementById("streak").innerText = streak;
-document.getElementById("bestStreak").innerText = bestStreak;
+streakEl.innerText = streak;
 
 function updateUsage(){
-  document.getElementById("usage").innerText =
-    "Free sessions left: " + (5 - freeUsed);
+  usage.innerText = "Free sessions left: " + (5 - freeUsed);
 }
 
 let trades=0, breaks=0, score=100;
 
 function startSession(){
+  if(locked){
+    alert("Come back tomorrow.");
+    return;
+  }
+
   if(freeUsed >= 5){
     alert("Upgrade required");
     return;
@@ -194,50 +181,29 @@ function startSession(){
   session.classList.remove("hidden");
 }
 
-function good(){
-  trades++;
-  update();
-}
-
-function bad(){
-  trades++;
-  breaks++;
-  score -= 25;
-  update();
-}
+function good(){ trades++; update(); }
+function bad(){ trades++; breaks++; score-=25; update(); }
 
 function update(){
   tradesEl.innerText = trades;
   breaksEl.innerText = breaks;
   scoreEl.innerText = score;
-  bar.style.width = score+"%";
 }
 
 function endSession(){
 
+  localStorage.setItem("lastSessionDate", today);
+
   freeUsed++;
   localStorage.setItem("freeUsed", freeUsed);
 
-  let grade="D";
-  if(score>=90) grade="A";
-  else if(score>=75) grade="B";
-  else if(score>=50) grade="C";
-
-  if(score>=75){
-    streak++;
-    if(streak > bestStreak){
-      bestStreak = streak;
-      localStorage.setItem("bestStreak", bestStreak);
-    }
-  } else {
-    streak=0;
-  }
-
+  if(score>=75) streak++; else streak=0;
   localStorage.setItem("streak", streak);
 
   history.push({
     score: score,
-    date: new Date().toLocaleDateString()
+    date: new Date().toISOString(),
+    mistakes: breaks
   });
 
   localStorage.setItem("history", JSON.stringify(history));
@@ -245,32 +211,57 @@ function endSession(){
   result.classList.remove("hidden");
   session.classList.add("hidden");
 
-  gradeEl.innerText = grade;
-  resultText.innerText = "Your discipline score: " + score + "%";
+  gradeEl.innerText =
+    score>=90?"A":score>=75?"B":score>=50?"C":"D";
+
+  resultText.innerText = "Discipline logged. Review your week.";
 }
 
-function loadStats(){
-  document.getElementById("totalSessions").innerText = history.length;
+function loadWeekly(){
 
+  let now = new Date();
+  let weekAgo = new Date();
+  weekAgo.setDate(now.getDate() - 7);
+
+  let weekData = history.filter(h => new Date(h.date) > weekAgo);
+
+  let total = weekData.length;
   let avg = 0;
-  history.forEach(h => avg += h.score);
-  avg = history.length ? Math.round(avg/history.length) : 0;
+  let mistakes = 0;
 
-  document.getElementById("avgScore").innerText = avg;
-  document.getElementById("bestStreak2").innerText = bestStreak;
+  weekData.forEach(h=>{
+    avg += h.score;
+    mistakes += h.mistakes || 0;
+  });
 
-  let hDiv = document.getElementById("history");
-  hDiv.innerHTML = "";
+  avg = total ? Math.round(avg/total) : 0;
 
+  weekSessions.innerText = total;
+  weekAvg.innerText = avg;
+  weekMistakes.innerText = mistakes;
+
+  let feedback = "No data yet.";
+
+  if(avg >= 85) feedback = "Elite discipline this week.";
+  else if(avg >= 70) feedback = "Solid consistency. Keep going.";
+  else if(avg >= 50) feedback = "Inconsistent. Tighten rules.";
+  else feedback = "You are breaking discipline too often.";
+
+  weekFeedback.innerText = feedback;
+}
+
+function loadHistory(){
+  historyDiv.innerHTML = "";
   history.slice().reverse().forEach(h=>{
-    hDiv.innerHTML += `<div class="history-item">
-      ${h.date} — Score: ${h.score}%
+    historyDiv.innerHTML += `<div class="history-item">
+      ${new Date(h.date).toLocaleDateString()} — ${h.score}%
     </div>`;
   });
 }
 
 updateUsage();
-loadStats();
+loadWeekly();
+loadHistory();
 </script>
 
 </body>
