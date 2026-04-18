@@ -15,6 +15,7 @@ body {
   color:#e2e8f0;
 }
 
+/* NAV */
 .nav {
   display:flex;
   justify-content:center;
@@ -33,31 +34,40 @@ body {
 
 .nav button.active { color:#a78bfa; }
 
+/* GRID LAYOUT */
 .container {
-  max-width:700px;
+  max-width:1100px;
   margin:auto;
   padding:20px;
 }
 
+.grid {
+  display:grid;
+  grid-template-columns: 2fr 1fr;
+  gap:20px;
+}
+
+/* CARDS */
 .card {
   background:rgba(255,255,255,0.05);
   border:1px solid rgba(255,255,255,0.08);
   border-radius:16px;
   padding:20px;
-  margin-top:20px;
 }
 
+/* BUTTONS */
 button {
   padding:10px 14px;
   border:none;
   border-radius:10px;
   cursor:pointer;
-  margin:5px 5px 0 0;
+  margin-top:10px;
 }
 
 .primary { background:#7c3aed; color:white; }
 .bad { background:#ef4444; color:white; }
 
+/* PROGRESS */
 .progress {
   height:8px;
   background:#020617;
@@ -73,21 +83,18 @@ button {
 .hidden { display:none; }
 
 .entry {
-  padding:12px;
+  padding:10px;
   margin-top:10px;
   background:rgba(255,255,255,0.05);
   border-radius:10px;
 }
 
-.insight {
-  padding:10px;
-  margin-top:10px;
-  border-left:3px solid #7c3aed;
-  background:rgba(124,58,237,0.1);
-  border-radius:8px;
-}
-
 .small { color:#94a3b8; font-size:13px; }
+
+.locked {
+  color:#ef4444;
+  font-weight:bold;
+}
 </style>
 </head>
 
@@ -101,11 +108,21 @@ button {
 
 <div class="container">
 
-<!-- DASH -->
+<!-- DASHBOARD -->
 <div id="dash">
 
+<div class="grid">
+
+<!-- LEFT (MAIN) -->
+<div>
+
 <div class="card">
-<h2>Session</h2>
+<h3>Performance</h3>
+<canvas id="chart"></canvas>
+</div>
+
+<div class="card">
+<h3>Session</h3>
 
 <div id="idleState">
   <p class="small">No active session</p>
@@ -123,21 +140,27 @@ button {
     <option>Impulse</option>
   </select>
 
-  <br><br>
+  <br>
 
   <button class="bad" onclick="bad()">Mistake</button>
   <button onclick="endSession()">End Session</button>
 </div>
+
 </div>
 
+</div>
+
+<!-- RIGHT (SIDE PANEL) -->
+<div>
+
 <div class="card">
-<h3>Daily Control</h3>
+<h3>Daily Limit</h3>
 
-<p>Max mistakes per day: <span id="limitDisplay">3</span></p>
+<p>Max mistakes: <span id="limitDisplay"></span></p>
 
+<button onclick="setLimit(0)">0</button>
+<button onclick="setLimit(1)">1</button>
 <button onclick="setLimit(2)">2</button>
-<button onclick="setLimit(3)">3</button>
-<button onclick="setLimit(5)">5</button>
 
 <p id="lockStatus" class="small"></p>
 </div>
@@ -150,15 +173,14 @@ button {
 </div>
 
 <div class="card">
-<h3>Performance (Last 7)</h3>
-<canvas id="chart"></canvas>
-</div>
-
-<div class="card">
 <a href="https://buy.stripe.com/aFa8wP0XEfQhfb81F16Na01" target="_blank">
-<button class="primary">Upgrade to Pro (£15/mo)</button>
+<button class="primary">Upgrade (£15/mo)</button>
 </a>
 <p id="usage"></p>
+</div>
+
+</div>
+
 </div>
 
 </div>
@@ -178,17 +200,10 @@ button {
 
 <!-- INSIGHTS -->
 <div id="insights" class="hidden">
-
 <div class="card">
 <h2>Insights</h2>
 <div id="insightBox"></div>
 </div>
-
-<div class="card">
-<h3>Weekly</h3>
-<p id="weekly"></p>
-</div>
-
 </div>
 
 </div>
@@ -216,7 +231,7 @@ let freeUsed = +localStorage.getItem("freeUsed")||0;
 let today = new Date().toDateString();
 let savedDay = localStorage.getItem("day");
 let mistakesToday = +localStorage.getItem("mistakesToday")||0;
-let maxMistakes = +localStorage.getItem("maxMistakes")||3;
+let maxMistakes = +localStorage.getItem("maxMistakes")||1;
 
 if(savedDay !== today){
   mistakesToday = 0;
@@ -225,29 +240,20 @@ if(savedDay !== today){
 }
 
 /* ELEMENTS */
-const streakEl = document.getElementById("streak");
-const levelEl = document.getElementById("level");
-const xpBar = document.getElementById("xpBar");
-const usage = document.getElementById("usage");
-const scoreEl = document.getElementById("score");
-const reason = document.getElementById("reason");
 const lockStatus = document.getElementById("lockStatus");
 const limitDisplay = document.getElementById("limitDisplay");
+const scoreEl = document.getElementById("score");
+const reason = document.getElementById("reason");
 
-/* INIT */
-streakEl.innerText = streak;
-levelEl.innerText = level;
-xpBar.style.width = (xp/(level*100))*100+"%";
-usage.innerText = "Free sessions left: "+(5-freeUsed);
 limitDisplay.innerText = maxMistakes;
 
-/* LOCK UI */
+/* LOCK */
 function updateLock(){
   if(mistakesToday >= maxMistakes){
-    lockStatus.innerText = "🔒 Locked for today";
+    lockStatus.innerHTML = `<span class="locked">LOCKED FOR TODAY</span>`;
     return true;
   } else {
-    lockStatus.innerText = `Mistakes today: ${mistakesToday}/${maxMistakes}`;
+    lockStatus.innerText = `Mistakes: ${mistakesToday}/${maxMistakes}`;
     return false;
   }
 }
@@ -262,16 +268,14 @@ function setLimit(n){
 
 /* SESSION */
 let score = 100;
-let reasons = [];
 let active = false;
 
 function startSession(){
   if(freeUsed>=5) return alert("Upgrade required");
-  if(updateLock()) return alert("You are locked for today");
+  if(updateLock()) return alert("Locked for today");
 
-  score = 100;
-  reasons = [];
   active = true;
+  score = 100;
 
   idleState.classList.add("hidden");
   activeState.classList.remove("hidden");
@@ -286,40 +290,23 @@ function bad(){
   if(!r) return alert("Pick reason");
 
   score -= 25;
-  reasons.push(r);
   scoreEl.innerText = score;
 
   mistakesToday++;
   localStorage.setItem("mistakesToday", mistakesToday);
   updateLock();
 
-  if(score < 50){
-    alert("Hard stop triggered");
-    endSession();
-  }
+  if(score < 50) endSession();
 }
 
 function endSession(){
   if(!active) return;
 
   active = false;
-
   freeUsed++;
   localStorage.setItem("freeUsed", freeUsed);
 
-  if(score>=75) streak++; else streak=0;
-  localStorage.setItem("streak", streak);
-
-  xp += score;
-  if(xp >= level*100){
-    xp -= level*100;
-    level++;
-  }
-
-  localStorage.setItem("xp", xp);
-  localStorage.setItem("level", level);
-
-  history.push({score,reasons,date:Date.now()});
+  history.push({score,date:Date.now()});
   localStorage.setItem("history", JSON.stringify(history));
 
   location.reload();
@@ -330,7 +317,7 @@ let last7 = history.slice(-7);
 new Chart(document.getElementById("chart"), {
   type:"line",
   data:{
-    labels:last7.map((_,i)=>"S"+(i+1)),
+    labels:last7.map((_,i)=>i+1),
     datasets:[{
       data:last7.map(h=>h.score),
       borderColor:"#7c3aed",
@@ -338,27 +325,21 @@ new Chart(document.getElementById("chart"), {
     }]
   },
   options:{
-    plugins:{ legend:{display:false}},
-    scales:{ y:{min:0,max:100}}
+    plugins:{legend:{display:false}},
+    scales:{y:{min:0,max:100}}
   }
 });
 
 /* JOURNAL */
 function loadJournal(type="all"){
   journalList.innerHTML="";
-  history.slice().reverse().filter(h=>{
-    if(type==="good") return h.score>=75;
-    if(type==="bad") return h.score<75;
-    return true;
-  }).forEach(h=>{
+  history.slice().reverse().forEach(h=>{
     journalList.innerHTML+=`
-      <div class="entry">
-        ${new Date(h.date).toLocaleDateString()} — ${h.score}%<br>
-        <span class="small">${h.reasons.join(", ")}</span>
-      </div>`;
+    <div class="entry">
+      ${new Date(h.date).toLocaleDateString()} — ${h.score}%
+    </div>`;
   });
 }
-function filter(t){ loadJournal(t); }
 loadJournal();
 
 /* INSIGHTS */
@@ -367,32 +348,8 @@ function insights(){
     insightBox.innerText="Not enough data";
     return;
   }
-
-  let count={};
-  history.forEach(h=>{
-    h.reasons.forEach(r=>{
-      count[r]=(count[r]||0)+1;
-    });
-  });
-
-  let top = Object.keys(count).sort((a,b)=>count[b]-count[a])[0];
-  insightBox.innerHTML=`<div class="insight">Main issue: ${top}</div>`;
 }
 insights();
-
-/* WEEKLY */
-function weekly(){
-  let now=Date.now();
-  let w=7*24*60*60*1000;
-  let week = history.filter(h=>h.date>now-w);
-
-  let avg = week.length
-    ? Math.round(week.reduce((a,b)=>a+b.score,0)/week.length)
-    : 0;
-
-  weekly.innerText="This week avg: "+avg+"%";
-}
-weekly();
 
 </script>
 
