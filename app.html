@@ -27,8 +27,6 @@ body {
   border-radius:18px;
 }
 
-h1 { text-align:center; }
-
 button {
   padding:12px 20px;
   margin:10px 5px;
@@ -42,38 +40,17 @@ button {
 .good { background:#22c55e; }
 .bad { background:#ef4444; }
 
-select, textarea {
-  width:100%;
-  padding:10px;
-  border-radius:10px;
-  border:none;
-  margin-top:10px;
-  background:#020617;
-  color:white;
-}
-
-.warning { color:#facc15; }
-.danger { color:#ef4444; }
-
-.success { color:#22c55e; }
-.fail { color:#ef4444; }
-
-.badge {
-  display:inline-block;
-  padding:10px;
-  margin:6px;
-  border-radius:10px;
-  background:rgba(255,255,255,0.05);
-}
-
-.locked { opacity:0.3; }
-
-.upgrade { text-align:center; color:#a78bfa; }
-
-canvas {
-  margin-top:10px;
+.progress {
+  height:10px;
   background:#020617;
   border-radius:10px;
+  margin-top:10px;
+  overflow:hidden;
+}
+
+.bar {
+  height:100%;
+  background:#7c3aed;
 }
 
 .entry {
@@ -83,22 +60,12 @@ canvas {
   border-radius:10px;
 }
 
-.overlay {
-  position:fixed;
-  inset:0;
-  background:rgba(0,0,0,0.8);
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  z-index:999;
-}
-
-.modal {
-  max-width:500px;
-  background:#020617;
-  padding:30px;
-  border-radius:16px;
-  text-align:center;
+.insight {
+  margin-top:10px;
+  padding:10px;
+  border-left:4px solid #7c3aed;
+  background:rgba(124,58,237,0.1);
+  border-radius:8px;
 }
 
 .hidden { display:none; }
@@ -107,69 +74,37 @@ canvas {
 
 <body>
 
-<!-- ONBOARDING -->
-<div id="onboarding" class="overlay hidden">
-  <div class="modal">
-    <h2>Welcome to TradeTrack</h2>
-
-    <p>
-      This tool is built to stop emotional trading and force discipline.
-    </p>
-
-    <p>
-      ✔ Start a session<br>
-      ✔ Follow your rules<br>
-      ✔ Every mistake lowers your score<br>
-      ✔ Break discipline → session ends
-    </p>
-
-    <p>
-      Your goal is simple:<br>
-      <strong>Stay disciplined. Not profitable.</strong>
-    </p>
-
-    <button class="start" onclick="closeOnboarding()">Got it</button>
-  </div>
-</div>
-
 <div class="container">
 
 <h1>TradeTrack</h1>
 
+<!-- INSIGHTS -->
+<div class="card">
+<h3>Your Trading Insights</h3>
+<div id="insights"></div>
+</div>
+
+<!-- WEEKLY -->
+<div class="card">
+<h3>Weekly Performance</h3>
+<p id="weeklyStats"></p>
+<p id="comparison"></p>
+</div>
+
 <!-- SETUP -->
 <div class="card" id="setup">
-
-<h3>Checklist</h3>
-<label><input type="checkbox" id="c1"> Setup valid</label><br>
-<label><input type="checkbox" id="c2"> Risk managed</label><br>
-<label><input type="checkbox" id="c3"> No revenge trading</label><br>
-<label><input type="checkbox" id="c4"> Follow plan</label>
-
-<h3>Session Goal</h3>
-<select id="goal">
-<option value="">Select goal</option>
-<option value="1">Max 1 mistake</option>
-<option value="2">Max 2 mistakes</option>
-<option value="80">Stay above 80%</option>
-</select>
-
 <button class="start" id="startBtn">Start Session</button>
 
-<p id="usage"></p>
 <p>🔥 Streak: <span id="streak">0</span></p>
-<p>⭐ Level: <span id="level">1</span> | XP: <span id="xp">0</span></p>
+<p>⭐ Level: <span id="level">1</span></p>
 
-<a href="https://buy.stripe.com/aFa8wP0XEfQhfb81F16Na01" target="_blank">
-<button class="start">Upgrade to Pro — £15/month</button>
-</a>
-
+<div class="progress"><div id="xpBar" class="bar"></div></div>
 </div>
 
 <!-- SESSION -->
 <div class="card hidden" id="session">
 
 <p>Score: <span id="score">100</span>%</p>
-<div id="warning" class="warning"></div>
 
 <button class="good" id="goodBtn">Good</button>
 
@@ -182,83 +117,182 @@ canvas {
 </select>
 
 <button class="bad" id="badBtn">Bad</button>
-
 <button id="endBtn">End Session</button>
 
 </div>
 
 <!-- RESULT -->
 <div class="card hidden" id="result">
-
 <h1 id="grade"></h1>
-<p id="goalResult"></p>
-<p id="badgeEarned"></p>
-
-<textarea id="notes" placeholder="Session notes..."></textarea>
-<button id="saveNoteBtn">Save</button>
-
-</div>
-
-<!-- CHART -->
-<div class="card">
-<h3>Performance Chart</h3>
-<canvas id="chart" width="300" height="150"></canvas>
-<div id="chartLock" class="upgrade hidden">Upgrade to Pro</div>
 </div>
 
 <!-- JOURNAL -->
 <div class="card">
 <h3>Journal</h3>
 <div id="journalContent"></div>
-<div id="journalLock" class="upgrade hidden">Upgrade to Pro</div>
-</div>
-
-<!-- BADGES -->
-<div class="card">
-<h3>Achievements</h3>
-<div id="badges"></div>
-<div id="badgeLock" class="upgrade hidden">Upgrade to Pro</div>
 </div>
 
 </div>
 
 <script>
 
-/* ONBOARDING */
-if(!localStorage.getItem("seenOnboarding")){
-  document.getElementById("onboarding").classList.remove("hidden");
-}
-
-function closeOnboarding(){
-  localStorage.setItem("seenOnboarding", true);
-  document.getElementById("onboarding").classList.add("hidden");
-}
-
-/* PRO SYSTEM */
-let plan = localStorage.getItem("plan") || "free";
-
-if (window.location.search.includes("pro=true")) {
-  plan = "pro";
-  localStorage.setItem("plan","pro");
-  window.history.replaceState({}, document.title, window.location.pathname);
-}
-
 /* DATA */
-let freeUsed = +localStorage.getItem("freeUsed") || 0;
-let streak = +localStorage.getItem("streak") || 0;
 let history = JSON.parse(localStorage.getItem("history") || "[]");
-
+let streak = +localStorage.getItem("streak") || 0;
 let xp = +localStorage.getItem("xp") || 0;
 let level = +localStorage.getItem("level") || 1;
 
-/* INIT */
-document.getElementById("usage").innerText =
-  plan==="free"
-  ? "Free sessions left: " + (5-freeUsed)
-  : "Pro unlocked — Unlimited";
+/* UI */
+streak.innerText = streak;
+level.innerText = level;
+xpBar.style.width = (xp/(level*100))*100 + "%";
 
-/* SESSION LOGIC SAME AS BEFORE */
-/* (kept clean and working) */
+/* SESSION */
+let score = 100;
+let reasons = [];
+
+/* START */
+startBtn.onclick = () => {
+  setup.classList.add("hidden");
+  session.classList.remove("hidden");
+};
+
+/* BAD */
+badBtn.onclick = () => {
+  let r = reason.value;
+  if(!r){ alert("Pick reason"); return; }
+
+  score -= 25;
+  reasons.push(r);
+
+  if(score < 50){
+    endSession();
+  }
+};
+
+/* END */
+endBtn.onclick = () => endSession();
+
+function endSession(){
+
+  if(score>=75){ streak++; } else { streak=0; }
+  localStorage.setItem("streak", streak);
+
+  xp += score;
+  if(xp >= level*100){
+    xp -= level*100;
+    level++;
+  }
+
+  localStorage.setItem("xp", xp);
+  localStorage.setItem("level", level);
+
+  history.push({
+    score:score,
+    reasons:reasons,
+    date:Date.now()
+  });
+
+  localStorage.setItem("history", JSON.stringify(history));
+
+  session.classList.add("hidden");
+  result.classList.remove("hidden");
+
+  grade.innerText =
+    score>=90?"A":
+    score>=75?"B":
+    score>=50?"C":"D";
+}
+
+/* JOURNAL */
+function loadJournal(){
+  history.slice().reverse().forEach(h=>{
+    journalContent.innerHTML += `
+      <div class="entry">
+        ${new Date(h.date).toLocaleDateString()} — ${h.score}%
+        <br>${(h.reasons||[]).join(", ")}
+      </div>
+    `;
+  });
+}
+loadJournal();
+
+/* INSIGHTS ENGINE */
+function generateInsights(){
+
+  if(history.length < 3){
+    insights.innerHTML = "<p>Not enough data yet</p>";
+    return;
+  }
+
+  let mistakeCount = {};
+  let lowScoreCount = 0;
+
+  history.forEach(h=>{
+    if(h.score < 75) lowScoreCount++;
+
+    (h.reasons||[]).forEach(r=>{
+      mistakeCount[r] = (mistakeCount[r]||0)+1;
+    });
+  });
+
+  let topMistake = Object.keys(mistakeCount)
+    .sort((a,b)=>mistakeCount[b]-mistakeCount[a])[0];
+
+  let output = "";
+
+  if(topMistake === "Revenge"){
+    output += `<div class="insight">You tend to revenge trade after mistakes.</div>`;
+  }
+
+  if(topMistake === "FOMO"){
+    output += `<div class="insight">You frequently enter trades impulsively (FOMO).</div>`;
+  }
+
+  if(lowScoreCount > history.length/2){
+    output += `<div class="insight">Your discipline is inconsistent. Focus on fewer trades.</div>`;
+  }
+
+  if(output === ""){
+    output = `<div class="insight">You're showing strong discipline. Keep going.</div>`;
+  }
+
+  insights.innerHTML = output;
+}
+
+generateInsights();
+
+/* WEEKLY COMP */
+function weeklyReport(){
+
+  let now = Date.now();
+  let week = 7*24*60*60*1000;
+
+  let thisWeek = history.filter(h=>h.date > now-week);
+  let lastWeek = history.filter(h=>h.date > now-2*week && h.date <= now-week);
+
+  function avg(arr){
+    if(arr.length===0) return 0;
+    return Math.round(arr.reduce((a,b)=>a+b.score,0)/arr.length);
+  }
+
+  let a = avg(thisWeek);
+  let b = avg(lastWeek);
+
+  weeklyStats.innerText = `This week avg: ${a}%`;
+
+  let diff = a - b;
+
+  if(b===0){
+    comparison.innerText = "No previous data";
+  } else if(diff > 0){
+    comparison.innerText = `📈 Improved +${diff}%`;
+  } else {
+    comparison.innerText = `📉 Down ${diff}%`;
+  }
+}
+
+weeklyReport();
 
 </script>
 
