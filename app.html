@@ -52,10 +52,14 @@ textarea {
 
 .entry {
   text-align:left;
-  margin-top:15px;
+  margin-top:10px;
   padding:10px;
   background:rgba(255,255,255,0.05);
   border-radius:10px;
+}
+
+.stat {
+  margin-top:10px;
 }
 
 .upgrade { color:#a78bfa; }
@@ -68,7 +72,6 @@ textarea {
 
 <h1>TradeTrack</h1>
 
-<!-- SETUP -->
 <div class="card" id="setup">
 
 <h3>Checklist</h3>
@@ -91,7 +94,6 @@ textarea {
 
 </div>
 
-<!-- SESSION -->
 <div class="card hidden" id="session">
 
 <p>Trades: <span id="trades">0</span></p>
@@ -115,7 +117,6 @@ textarea {
 
 </div>
 
-<!-- RESULT -->
 <div class="card hidden" id="result">
 
 <h2 id="resultTitle"></h2>
@@ -126,6 +127,19 @@ textarea {
 
 <br>
 <button id="saveNoteBtn">Save</button>
+
+</div>
+
+<!-- WEEKLY STATS -->
+<div class="card">
+
+<h3>Weekly Performance (Pro)</h3>
+
+<div id="statsContent"></div>
+
+<div id="statsLock" class="upgrade hidden">
+Upgrade to Pro to view stats
+</div>
 
 </div>
 
@@ -173,6 +187,9 @@ const result = document.getElementById("result");
 
 const notesInput = document.getElementById("notes");
 const saveNoteBtn = document.getElementById("saveNoteBtn");
+
+const statsContent = document.getElementById("statsContent");
+const statsLock = document.getElementById("statsLock");
 
 const journalContent = document.getElementById("journalContent");
 const journalLock = document.getElementById("journalLock");
@@ -239,7 +256,8 @@ endBtn.onclick = () => {
   history.push({
     score:score,
     reasons:reasons,
-    note:""
+    note:"",
+    date: Date.now()
   });
 
   localStorage.setItem("history", JSON.stringify(history));
@@ -255,7 +273,52 @@ saveNoteBtn.onclick = () => {
   location.reload();
 };
 
-/* JOURNAL LOAD */
+/* WEEKLY STATS */
+function loadStats(){
+
+  if(plan==="free"){
+    statsContent.style.display="none";
+    statsLock.classList.remove("hidden");
+    return;
+  }
+
+  let weekAgo = Date.now() - (7*24*60*60*1000);
+
+  let weekData = history.filter(h => h.date > weekAgo);
+
+  if(weekData.length === 0){
+    statsContent.innerHTML = "No data yet.";
+    return;
+  }
+
+  let totalScore = 0;
+  let totalMistakes = 0;
+
+  weekData.forEach(h=>{
+    totalScore += h.score;
+    totalMistakes += (h.reasons||[]).length;
+  });
+
+  let avgScore = Math.round(totalScore / weekData.length);
+
+  let trend = "No trend";
+  if(weekData.length >= 2){
+    let first = weekData[0].score;
+    let last = weekData.at(-1).score;
+    trend = last > first ? "Improving" : last < first ? "Declining" : "Stable";
+  }
+
+  statsContent.innerHTML = `
+    <div class="stat">📊 Sessions: ${weekData.length}</div>
+    <div class="stat">📈 Avg Score: ${avgScore}%</div>
+    <div class="stat">⚠️ Mistakes: ${totalMistakes}</div>
+    <div class="stat">📉 Trend: ${trend}</div>
+  `;
+}
+
+loadStats();
+
+/* JOURNAL */
 function loadJournal(){
 
   if(plan==="free"){
