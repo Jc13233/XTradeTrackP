@@ -5,143 +5,131 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>TradeTrack</title>
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
 <style>
 body {
   margin:0;
   font-family: Inter, system-ui;
-  background:#020617;
+  background: radial-gradient(circle at top,#1e293b,#020617);
   color:#e2e8f0;
 }
 
-/* NAV */
-.nav {
-  display:flex;
-  justify-content:center;
-  gap:30px;
-  padding:20px;
-  border-bottom:1px solid rgba(255,255,255,0.08);
-}
-
-.nav button {
-  background:none;
-  border:none;
-  color:#64748b;
-  cursor:pointer;
-}
-
-.nav button.active { color:#a78bfa; }
-
-/* LAYOUT */
 .container {
-  max-width:1100px;
+  max-width:720px;
   margin:auto;
-  padding:30px 20px;
+  padding:40px 20px;
 }
 
-.hero {
-  background:rgba(255,255,255,0.04);
-  border-radius:20px;
-  padding:25px;
-  margin-bottom:25px;
-}
-
-/* GRID */
-.grid {
-  display:grid;
-  grid-template-columns: 1.5fr 1fr;
-  gap:20px;
-}
-
-/* CARD */
 .card {
-  background:rgba(255,255,255,0.04);
-  border-radius:16px;
-  padding:20px;
+  background: rgba(255,255,255,0.05);
+  border:1px solid rgba(255,255,255,0.08);
+  padding:25px;
+  margin-top:20px;
+  border-radius:18px;
 }
 
-/* BUTTONS */
 button {
-  padding:12px;
+  padding:12px 20px;
+  margin:10px 5px;
   border:none;
   border-radius:10px;
+  font-weight:600;
   cursor:pointer;
-  margin-top:10px;
 }
 
-.primary { background:#22c55e; color:white; width:100%; }
-.bad { background:#ef4444; color:white; width:100%; }
+.start { background: linear-gradient(135deg,#7c3aed,#6366f1); }
+.good { background:#22c55e; }
+.bad { background:#ef4444; }
+
+.progress {
+  height:10px;
+  background:#020617;
+  border-radius:10px;
+  margin-top:10px;
+  overflow:hidden;
+}
+
+.bar {
+  height:100%;
+  background:#7c3aed;
+}
+
+.entry {
+  margin-top:10px;
+  padding:10px;
+  background:rgba(255,255,255,0.05);
+  border-radius:10px;
+}
+
+.insight {
+  margin-top:10px;
+  padding:10px;
+  border-left:4px solid #7c3aed;
+  background:rgba(124,58,237,0.1);
+  border-radius:8px;
+}
 
 .hidden { display:none; }
-
-.small {
-  color:#64748b;
-  font-size:13px;
-}
-
-.timer {
-  font-size:18px;
-  margin-bottom:10px;
-  color:#a78bfa;
-}
 </style>
 </head>
 
 <body>
 
-<div class="nav">
-  <button class="active">Dashboard</button>
-</div>
-
 <div class="container">
 
-<!-- GRAPH -->
-<div class="hero">
-  <h3>Performance</h3>
-  <canvas id="chart"></canvas>
+<h1>TradeTrack</h1>
+
+<!-- INSIGHTS -->
+<div class="card">
+<h3>Your Trading Insights</h3>
+<div id="insights"></div>
 </div>
 
-<div class="grid">
+<!-- WEEKLY -->
+<div class="card">
+<h3>Weekly Performance</h3>
+<p id="weeklyStats"></p>
+<p id="comparison"></p>
+</div>
+
+<!-- SETUP -->
+<div class="card" id="setup">
+<button class="start" id="startBtn">Start Session</button>
+
+<p>🔥 Streak: <span id="streak">0</span></p>
+<p>⭐ Level: <span id="level">1</span></p>
+
+<div class="progress"><div id="xpBar" class="bar"></div></div>
+</div>
 
 <!-- SESSION -->
+<div class="card hidden" id="session">
+
+<p>Score: <span id="score">100</span>%</p>
+
+<button class="good" id="goodBtn">Good</button>
+
+<select id="reason">
+<option value="">Why break?</option>
+<option>FOMO</option>
+<option>Revenge</option>
+<option>Boredom</option>
+<option>Impulse</option>
+</select>
+
+<button class="bad" id="badBtn">Bad</button>
+<button id="endBtn">End Session</button>
+
+</div>
+
+<!-- RESULT -->
+<div class="card hidden" id="result">
+<h1 id="grade"></h1>
+</div>
+
+<!-- JOURNAL -->
 <div class="card">
-  <h3>Session</h3>
-
-  <div id="idleState">
-    <p class="small">Ready to start</p>
-    <button class="primary" onclick="startSession()">Start Session</button>
-  </div>
-
-  <div id="activeState" class="hidden">
-
-    <div class="timer" id="timer">00:00</div>
-    <h1 id="score">100%</h1>
-
-    <button class="primary" onclick="good()">Stayed Disciplined</button>
-    <button class="bad" onclick="bad()">Mistake</button>
-    <button onclick="endSession()">End Session</button>
-
-  </div>
-</div>
-
-<!-- SIDE -->
-<div>
-
-<div class="card">
-  <h3>Stats</h3>
-  <p>Sessions: <span id="sessions">0</span></p>
-</div>
-
-<div class="card">
-  <a href="https://buy.stripe.com/aFa8wP0XEfQhfb81F16Na01" target="_blank">
-    <button class="primary">Upgrade (£15/mo)</button>
-  </a>
-  <p id="usage" class="small"></p>
-</div>
-
-</div>
-
+<h3>Journal</h3>
+<div id="journalContent"></div>
 </div>
 
 </div>
@@ -149,115 +137,162 @@ button {
 <script>
 
 /* DATA */
-let history = JSON.parse(localStorage.getItem("history")||"[]");
-let freeUsed = +localStorage.getItem("freeUsed")||0;
+let history = JSON.parse(localStorage.getItem("history") || "[]");
+let streak = +localStorage.getItem("streak") || 0;
+let xp = +localStorage.getItem("xp") || 0;
+let level = +localStorage.getItem("level") || 1;
 
-/* UI INIT */
-document.getElementById("sessions").innerText = history.length;
-document.getElementById("usage").innerText = "Free sessions left: "+(5-freeUsed);
+/* UI */
+streak.innerText = streak;
+level.innerText = level;
+xpBar.style.width = (xp/(level*100))*100 + "%";
 
 /* SESSION */
 let score = 100;
-let active = false;
-let timerInterval;
-let seconds = 0;
+let reasons = [];
 
 /* START */
-function startSession(){
-  if(freeUsed>=5) return alert("Upgrade required");
-
-  active = true;
-  score = 100;
-  seconds = 0;
-
-  idleState.classList.add("hidden");
-  activeState.classList.remove("hidden");
-
-  updateScore();
-  startTimer();
-}
-
-/* TIMER */
-function startTimer(){
-  timerInterval = setInterval(()=>{
-    seconds++;
-
-    // reward passive discipline
-    score += 1;
-    if(score > 100) score = 100;
-
-    updateScore();
-
-    let min = String(Math.floor(seconds/60)).padStart(2,"0");
-    let sec = String(seconds%60).padStart(2,"0");
-    timer.innerText = `${min}:${sec}`;
-
-  },1000);
-}
-
-/* GOOD */
-function good(){
-  if(!active) return;
-
-  score += 3;
-  if(score > 100) score = 100;
-
-  updateScore();
-}
+startBtn.onclick = () => {
+  setup.classList.add("hidden");
+  session.classList.remove("hidden");
+};
 
 /* BAD */
-function bad(){
-  if(!active) return;
+badBtn.onclick = () => {
+  let r = reason.value;
+  if(!r){ alert("Pick reason"); return; }
 
   score -= 25;
-  updateScore();
+  reasons.push(r);
 
-  if(score < 50) endSession();
-}
+  if(score < 50){
+    endSession();
+  }
+};
 
 /* END */
+endBtn.onclick = () => endSession();
+
 function endSession(){
-  if(!active) return;
 
-  clearInterval(timerInterval);
-  active = false;
+  if(score>=75){ streak++; } else { streak=0; }
+  localStorage.setItem("streak", streak);
 
-  freeUsed++;
-  localStorage.setItem("freeUsed", freeUsed);
+  xp += score;
+  if(xp >= level*100){
+    xp -= level*100;
+    level++;
+  }
+
+  localStorage.setItem("xp", xp);
+  localStorage.setItem("level", level);
 
   history.push({
-    score: score,
-    date: Date.now()
+    score:score,
+    reasons:reasons,
+    date:Date.now()
   });
 
   localStorage.setItem("history", JSON.stringify(history));
 
-  location.reload();
+  session.classList.add("hidden");
+  result.classList.remove("hidden");
+
+  grade.innerText =
+    score>=90?"A":
+    score>=75?"B":
+    score>=50?"C":"D";
 }
 
-/* UPDATE SCORE */
-function updateScore(){
-  document.getElementById("score").innerText = score + "%";
+/* JOURNAL */
+function loadJournal(){
+  history.slice().reverse().forEach(h=>{
+    journalContent.innerHTML += `
+      <div class="entry">
+        ${new Date(h.date).toLocaleDateString()} — ${h.score}%
+        <br>${(h.reasons||[]).join(", ")}
+      </div>
+    `;
+  });
 }
+loadJournal();
 
-/* GRAPH */
-let last7 = history.slice(-7);
+/* INSIGHTS ENGINE */
+function generateInsights(){
 
-new Chart(document.getElementById("chart"), {
-  type:"line",
-  data:{
-    labels:last7.map((_,i)=>i+1),
-    datasets:[{
-      data:last7.map(h=>h.score),
-      borderColor:"#7c3aed",
-      tension:0.4
-    }]
-  },
-  options:{
-    plugins:{legend:{display:false}},
-    scales:{y:{min:0,max:100}}
+  if(history.length < 3){
+    insights.innerHTML = "<p>Not enough data yet</p>";
+    return;
   }
-});
+
+  let mistakeCount = {};
+  let lowScoreCount = 0;
+
+  history.forEach(h=>{
+    if(h.score < 75) lowScoreCount++;
+
+    (h.reasons||[]).forEach(r=>{
+      mistakeCount[r] = (mistakeCount[r]||0)+1;
+    });
+  });
+
+  let topMistake = Object.keys(mistakeCount)
+    .sort((a,b)=>mistakeCount[b]-mistakeCount[a])[0];
+
+  let output = "";
+
+  if(topMistake === "Revenge"){
+    output += `<div class="insight">You tend to revenge trade after mistakes.</div>`;
+  }
+
+  if(topMistake === "FOMO"){
+    output += `<div class="insight">You frequently enter trades impulsively (FOMO).</div>`;
+  }
+
+  if(lowScoreCount > history.length/2){
+    output += `<div class="insight">Your discipline is inconsistent. Focus on fewer trades.</div>`;
+  }
+
+  if(output === ""){
+    output = `<div class="insight">You're showing strong discipline. Keep going.</div>`;
+  }
+
+  insights.innerHTML = output;
+}
+
+generateInsights();
+
+/* WEEKLY COMP */
+function weeklyReport(){
+
+  let now = Date.now();
+  let week = 7*24*60*60*1000;
+
+  let thisWeek = history.filter(h=>h.date > now-week);
+  let lastWeek = history.filter(h=>h.date > now-2*week && h.date <= now-week);
+
+  function avg(arr){
+    if(arr.length===0) return 0;
+    return Math.round(arr.reduce((a,b)=>a+b.score,0)/arr.length);
+  }
+
+  let a = avg(thisWeek);
+  let b = avg(lastWeek);
+
+  weeklyStats.innerText = `This week avg: ${a}%`;
+
+  let diff = a - b;
+
+  if(b===0){
+    comparison.innerText = "No previous data";
+  } else if(diff > 0){
+    comparison.innerText = `📈 Improved +${diff}%`;
+  } else {
+    comparison.innerText = `📉 Down ${diff}%`;
+  }
+}
+
+weeklyReport();
 
 </script>
 
