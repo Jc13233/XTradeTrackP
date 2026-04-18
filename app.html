@@ -81,6 +81,7 @@ button {
 
 <p id="usage"></p>
 <p>🔥 Streak: <span id="streak">0</span></p>
+<p>⭐ Level: <span id="level">1</span> | XP: <span id="xp">0</span></p>
 <p id="lockMsg"></p>
 
 <a href="https://buy.stripe.com/aFa8wP0XEfQhfb81F16Na01" target="_blank">
@@ -116,7 +117,7 @@ button {
 
 </div>
 
-<div class="card" id="heatmapBox">
+<div class="card">
 
 <h3>Heatmap (Pro)</h3>
 
@@ -145,6 +146,10 @@ let streak = +localStorage.getItem("streak") || 0;
 let lastDate = localStorage.getItem("lastDate");
 let history = JSON.parse(localStorage.getItem("history") || "[]");
 
+/* XP SYSTEM */
+let xp = +localStorage.getItem("xp") || 0;
+let level = +localStorage.getItem("level") || 1;
+
 /* ELEMENTS */
 const startBtn = document.getElementById("startBtn");
 const goodBtn = document.getElementById("goodBtn");
@@ -163,20 +168,24 @@ const usage = document.getElementById("usage");
 const streakEl = document.getElementById("streak");
 const lockMsg = document.getElementById("lockMsg");
 
+const xpEl = document.getElementById("xp");
+const levelEl = document.getElementById("level");
+
 const heatmapContent = document.getElementById("heatmapContent");
 const heatmapLock = document.getElementById("heatmapLock");
 
 /* INIT */
 streakEl.innerText = streak;
+xpEl.innerText = xp;
+levelEl.innerText = level;
 
 usage.innerText =
   plan==="free"
   ? "Free sessions left: " + (5-freeUsed)
   : "Unlimited sessions";
 
-/* DAILY LOCK (PRO ONLY) */
+/* DAILY LOCK */
 let today = new Date().toDateString();
-
 if(plan==="pro" && lastDate === today){
   lockMsg.innerText = "You are done for today.";
 }
@@ -214,9 +223,7 @@ goodBtn.onclick = () => {
 };
 
 badBtn.onclick = () => {
-
   let r = reason.value;
-
   if(!r){
     alert("Pick reason.");
     return;
@@ -253,8 +260,19 @@ endBtn.onclick = () => {
   } else {
     streak = 0;
   }
-
   localStorage.setItem("streak", streak);
+
+  /* XP LOGIC */
+  let gainedXP = Math.max(10, score);
+  xp += gainedXP;
+
+  if(xp >= level * 100){
+    xp = xp - (level * 100);
+    level++;
+  }
+
+  localStorage.setItem("xp", xp);
+  localStorage.setItem("level", level);
 
   history.push({
     score: score,
