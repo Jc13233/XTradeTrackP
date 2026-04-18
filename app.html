@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>XTradeTrackP</title>
+<title>TradeTrack</title>
 
 <style>
 body {
@@ -28,44 +28,27 @@ body {
 }
 
 button {
-  padding:12px 20px;
-  margin:10px 5px;
+  padding:10px 16px;
+  margin:5px;
   border:none;
-  border-radius:10px;
-  font-weight:600;
+  border-radius:8px;
   cursor:pointer;
 }
 
-.start { background: linear-gradient(135deg,#7c3aed,#6366f1); }
+.start { background:#7c3aed; color:white; }
 .good { background:#22c55e; }
 .bad { background:#ef4444; }
 
-.progress {
-  height:10px;
-  background:#020617;
-  border-radius:10px;
-  margin-top:10px;
-  overflow:hidden;
-}
-
-.bar {
-  height:100%;
-  background:#7c3aed;
-}
-
 .entry {
-  margin-top:10px;
-  padding:10px;
+  margin-top:12px;
+  padding:12px;
   background:rgba(255,255,255,0.05);
   border-radius:10px;
 }
 
-.insight {
-  margin-top:10px;
-  padding:10px;
-  border-left:4px solid #7c3aed;
-  background:rgba(124,58,237,0.1);
-  border-radius:8px;
+.small {
+  font-size:12px;
+  color:#94a3b8;
 }
 
 .hidden { display:none; }
@@ -78,35 +61,14 @@ button {
 
 <h1>TradeTrack</h1>
 
-<!-- INSIGHTS -->
-<div class="card">
-<h3>Your Trading Insights</h3>
-<div id="insights"></div>
-</div>
-
-<!-- WEEKLY -->
-<div class="card">
-<h3>Weekly Performance</h3>
-<p id="weeklyStats"></p>
-<p id="comparison"></p>
-</div>
-
 <!-- SETUP -->
 <div class="card" id="setup">
 <button class="start" id="startBtn">Start Session</button>
-
-<p>🔥 Streak: <span id="streak">0</span></p>
-<p>⭐ Level: <span id="level">1</span></p>
-
-<div class="progress"><div id="xpBar" class="bar"></div></div>
 </div>
 
 <!-- SESSION -->
 <div class="card hidden" id="session">
-
 <p>Score: <span id="score">100</span>%</p>
-
-<button class="good" id="goodBtn">Good</button>
 
 <select id="reason">
 <option value="">Why break?</option>
@@ -118,17 +80,26 @@ button {
 
 <button class="bad" id="badBtn">Bad</button>
 <button id="endBtn">End Session</button>
-
 </div>
 
 <!-- RESULT -->
 <div class="card hidden" id="result">
-<h1 id="grade"></h1>
+<h2 id="grade"></h2>
+
+<textarea id="notes" placeholder="What went wrong? What will you improve?"></textarea>
+<button id="saveNoteBtn">Save Journal</button>
 </div>
 
 <!-- JOURNAL -->
 <div class="card">
 <h3>Journal</h3>
+
+<div>
+<button onclick="filterJournal('all')">All</button>
+<button onclick="filterJournal('good')">Good</button>
+<button onclick="filterJournal('bad')">Bad</button>
+</div>
+
 <div id="journalContent"></div>
 </div>
 
@@ -138,14 +109,6 @@ button {
 
 /* DATA */
 let history = JSON.parse(localStorage.getItem("history") || "[]");
-let streak = +localStorage.getItem("streak") || 0;
-let xp = +localStorage.getItem("xp") || 0;
-let level = +localStorage.getItem("level") || 1;
-
-/* UI */
-streak.innerText = streak;
-level.innerText = level;
-xpBar.style.width = (xp/(level*100))*100 + "%";
 
 /* SESSION */
 let score = 100;
@@ -164,6 +127,7 @@ badBtn.onclick = () => {
 
   score -= 25;
   reasons.push(r);
+  scoreEl.innerText = score;
 
   if(score < 50){
     endSession();
@@ -175,21 +139,10 @@ endBtn.onclick = () => endSession();
 
 function endSession(){
 
-  if(score>=75){ streak++; } else { streak=0; }
-  localStorage.setItem("streak", streak);
-
-  xp += score;
-  if(xp >= level*100){
-    xp -= level*100;
-    level++;
-  }
-
-  localStorage.setItem("xp", xp);
-  localStorage.setItem("level", level);
-
   history.push({
     score:score,
     reasons:reasons,
+    note:"",
     date:Date.now()
   });
 
@@ -204,95 +157,54 @@ function endSession(){
     score>=50?"C":"D";
 }
 
+/* SAVE NOTE */
+saveNoteBtn.onclick = () => {
+  let note = notes.value;
+
+  history[history.length-1].note = note;
+  localStorage.setItem("history", JSON.stringify(history));
+
+  location.reload();
+};
+
 /* JOURNAL */
-function loadJournal(){
-  history.slice().reverse().forEach(h=>{
+function loadJournal(filter="all"){
+
+  journalContent.innerHTML = "";
+
+  let filtered = history.slice().reverse().filter(h=>{
+    if(filter==="good") return h.score>=75;
+    if(filter==="bad") return h.score<75;
+    return true;
+  });
+
+  filtered.forEach((h,i)=>{
+
+    let index = history.length - 1 - i;
+
     journalContent.innerHTML += `
       <div class="entry">
-        ${new Date(h.date).toLocaleDateString()} — ${h.score}%
-        <br>${(h.reasons||[]).join(", ")}
+        <strong>${new Date(h.date).toLocaleDateString()}</strong><br>
+        Score: ${h.score}%<br>
+        Mistakes: ${(h.reasons||[]).join(", ") || "None"}<br>
+        <div class="small">${h.note || "No notes"}</div>
+        <button onclick="deleteEntry(${index})">Delete</button>
       </div>
     `;
   });
 }
+
+function filterJournal(type){
+  loadJournal(type);
+}
+
+function deleteEntry(i){
+  history.splice(i,1);
+  localStorage.setItem("history", JSON.stringify(history));
+  loadJournal();
+}
+
 loadJournal();
-
-/* INSIGHTS ENGINE */
-function generateInsights(){
-
-  if(history.length < 3){
-    insights.innerHTML = "<p>Not enough data yet</p>";
-    return;
-  }
-
-  let mistakeCount = {};
-  let lowScoreCount = 0;
-
-  history.forEach(h=>{
-    if(h.score < 75) lowScoreCount++;
-
-    (h.reasons||[]).forEach(r=>{
-      mistakeCount[r] = (mistakeCount[r]||0)+1;
-    });
-  });
-
-  let topMistake = Object.keys(mistakeCount)
-    .sort((a,b)=>mistakeCount[b]-mistakeCount[a])[0];
-
-  let output = "";
-
-  if(topMistake === "Revenge"){
-    output += `<div class="insight">You tend to revenge trade after mistakes.</div>`;
-  }
-
-  if(topMistake === "FOMO"){
-    output += `<div class="insight">You frequently enter trades impulsively (FOMO).</div>`;
-  }
-
-  if(lowScoreCount > history.length/2){
-    output += `<div class="insight">Your discipline is inconsistent. Focus on fewer trades.</div>`;
-  }
-
-  if(output === ""){
-    output = `<div class="insight">You're showing strong discipline. Keep going.</div>`;
-  }
-
-  insights.innerHTML = output;
-}
-
-generateInsights();
-
-/* WEEKLY COMP */
-function weeklyReport(){
-
-  let now = Date.now();
-  let week = 7*24*60*60*1000;
-
-  let thisWeek = history.filter(h=>h.date > now-week);
-  let lastWeek = history.filter(h=>h.date > now-2*week && h.date <= now-week);
-
-  function avg(arr){
-    if(arr.length===0) return 0;
-    return Math.round(arr.reduce((a,b)=>a+b.score,0)/arr.length);
-  }
-
-  let a = avg(thisWeek);
-  let b = avg(lastWeek);
-
-  weeklyStats.innerText = `This week avg: ${a}%`;
-
-  let diff = a - b;
-
-  if(b===0){
-    comparison.innerText = "No previous data";
-  } else if(diff > 0){
-    comparison.innerText = `📈 Improved +${diff}%`;
-  } else {
-    comparison.innerText = `📉 Down ${diff}%`;
-  }
-}
-
-weeklyReport();
 
 </script>
 
