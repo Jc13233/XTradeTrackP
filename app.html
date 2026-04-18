@@ -19,37 +19,47 @@ body {
 .nav {
   display:flex;
   justify-content:center;
-  gap:20px;
+  gap:30px;
   padding:20px;
-  border-bottom:1px solid rgba(255,255,255,0.1);
+  border-bottom:1px solid rgba(255,255,255,0.08);
 }
 
 .nav button {
   background:none;
-  color:#94a3b8;
   border:none;
-  font-size:16px;
+  color:#64748b;
+  font-size:15px;
   cursor:pointer;
 }
 
 .nav button.active { color:#a78bfa; }
 
-/* GRID LAYOUT */
+/* LAYOUT */
 .container {
   max-width:1100px;
   margin:auto;
-  padding:20px;
+  padding:30px 20px;
 }
 
+/* HERO GRAPH */
+.hero {
+  background:rgba(255,255,255,0.04);
+  border:1px solid rgba(255,255,255,0.08);
+  border-radius:20px;
+  padding:25px;
+  margin-bottom:25px;
+}
+
+/* GRID */
 .grid {
   display:grid;
-  grid-template-columns: 2fr 1fr;
+  grid-template-columns: 1.5fr 1fr;
   gap:20px;
 }
 
-/* CARDS */
+/* CARD */
 .card {
-  background:rgba(255,255,255,0.05);
+  background:rgba(255,255,255,0.04);
   border:1px solid rgba(255,255,255,0.08);
   border-radius:16px;
   padding:20px;
@@ -57,15 +67,24 @@ body {
 
 /* BUTTONS */
 button {
-  padding:10px 14px;
+  padding:12px 16px;
   border:none;
   border-radius:10px;
   cursor:pointer;
-  margin-top:10px;
 }
 
-.primary { background:#7c3aed; color:white; }
-.bad { background:#ef4444; color:white; }
+.primary {
+  background:#7c3aed;
+  color:white;
+  width:100%;
+}
+
+.bad {
+  background:#ef4444;
+  color:white;
+  margin-top:10px;
+  width:100%;
+}
 
 /* PROGRESS */
 .progress {
@@ -80,20 +99,13 @@ button {
   background:#7c3aed;
 }
 
+/* HIDDEN */
 .hidden { display:none; }
 
-.entry {
-  padding:10px;
-  margin-top:10px;
-  background:rgba(255,255,255,0.05);
-  border-radius:10px;
-}
-
-.small { color:#94a3b8; font-size:13px; }
-
-.locked {
-  color:#ef4444;
-  font-weight:bold;
+/* TEXT */
+.small {
+  color:#64748b;
+  font-size:13px;
 }
 </style>
 </head>
@@ -111,72 +123,46 @@ button {
 <!-- DASHBOARD -->
 <div id="dash">
 
+<!-- GRAPH -->
+<div class="hero">
+  <h3>Performance</h3>
+  <canvas id="chart"></canvas>
+</div>
+
 <div class="grid">
 
-<!-- LEFT (MAIN) -->
+<!-- LEFT -->
+<div class="card">
+  <h3>Session</h3>
+
+  <div id="idleState">
+    <p class="small">Ready to start</p>
+    <button class="primary" onclick="startSession()">Start Session</button>
+  </div>
+
+  <div id="activeState" class="hidden">
+    <h2 id="score">100%</h2>
+
+    <button class="bad" onclick="bad()">Mistake</button>
+    <button onclick="endSession()">End Session</button>
+  </div>
+</div>
+
+<!-- RIGHT -->
 <div>
 
 <div class="card">
-<h3>Performance</h3>
-<canvas id="chart"></canvas>
+  <h3>Stats</h3>
+  <p>🔥 Streak: <span id="streak">0</span></p>
+  <p>⭐ Level: <span id="level">1</span></p>
+  <div class="progress"><div id="xpBar" class="bar"></div></div>
 </div>
 
 <div class="card">
-<h3>Session</h3>
-
-<div id="idleState">
-  <p class="small">No active session</p>
-  <button class="primary" onclick="startSession()">Start Session</button>
-</div>
-
-<div id="activeState" class="hidden">
-  <p>Score: <span id="score">100</span>%</p>
-
-  <select id="reason">
-    <option value="">Why break?</option>
-    <option>FOMO</option>
-    <option>Revenge</option>
-    <option>Boredom</option>
-    <option>Impulse</option>
-  </select>
-
-  <br>
-
-  <button class="bad" onclick="bad()">Mistake</button>
-  <button onclick="endSession()">End Session</button>
-</div>
-
-</div>
-
-</div>
-
-<!-- RIGHT (SIDE PANEL) -->
-<div>
-
-<div class="card">
-<h3>Daily Limit</h3>
-
-<p>Max mistakes: <span id="limitDisplay"></span></p>
-
-<button onclick="setLimit(0)">0</button>
-<button onclick="setLimit(1)">1</button>
-<button onclick="setLimit(2)">2</button>
-
-<p id="lockStatus" class="small"></p>
-</div>
-
-<div class="card">
-<h3>Stats</h3>
-<p>🔥 Streak: <span id="streak">0</span></p>
-<p>⭐ Level: <span id="level">1</span></p>
-<div class="progress"><div id="xpBar" class="bar"></div></div>
-</div>
-
-<div class="card">
-<a href="https://buy.stripe.com/aFa8wP0XEfQhfb81F16Na01" target="_blank">
-<button class="primary">Upgrade (£15/mo)</button>
-</a>
-<p id="usage"></p>
+  <a href="https://buy.stripe.com/aFa8wP0XEfQhfb81F16Na01" target="_blank">
+    <button class="primary">Upgrade (£15/mo)</button>
+  </a>
+  <p id="usage" class="small"></p>
 </div>
 
 </div>
@@ -189,11 +175,6 @@ button {
 <div id="journal" class="hidden">
 <div class="card">
 <h2>Journal</h2>
-
-<button onclick="filter('all')">All</button>
-<button onclick="filter('good')">Good</button>
-<button onclick="filter('bad')">Bad</button>
-
 <div id="journalList"></div>
 </div>
 </div>
@@ -227,44 +208,11 @@ let xp = +localStorage.getItem("xp")||0;
 let level = +localStorage.getItem("level")||1;
 let freeUsed = +localStorage.getItem("freeUsed")||0;
 
-/* DAILY LOCK */
-let today = new Date().toDateString();
-let savedDay = localStorage.getItem("day");
-let mistakesToday = +localStorage.getItem("mistakesToday")||0;
-let maxMistakes = +localStorage.getItem("maxMistakes")||1;
-
-if(savedDay !== today){
-  mistakesToday = 0;
-  localStorage.setItem("mistakesToday", 0);
-  localStorage.setItem("day", today);
-}
-
-/* ELEMENTS */
-const lockStatus = document.getElementById("lockStatus");
-const limitDisplay = document.getElementById("limitDisplay");
-const scoreEl = document.getElementById("score");
-const reason = document.getElementById("reason");
-
-limitDisplay.innerText = maxMistakes;
-
-/* LOCK */
-function updateLock(){
-  if(mistakesToday >= maxMistakes){
-    lockStatus.innerHTML = `<span class="locked">LOCKED FOR TODAY</span>`;
-    return true;
-  } else {
-    lockStatus.innerText = `Mistakes: ${mistakesToday}/${maxMistakes}`;
-    return false;
-  }
-}
-updateLock();
-
-function setLimit(n){
-  maxMistakes = n;
-  localStorage.setItem("maxMistakes", n);
-  limitDisplay.innerText = n;
-  updateLock();
-}
+/* INIT */
+streak.innerText = streak;
+level.innerText = level;
+xpBar.style.width = (xp/(level*100))*100+"%";
+usage.innerText = "Free sessions left: "+(5-freeUsed);
 
 /* SESSION */
 let score = 100;
@@ -272,7 +220,6 @@ let active = false;
 
 function startSession(){
   if(freeUsed>=5) return alert("Upgrade required");
-  if(updateLock()) return alert("Locked for today");
 
   active = true;
   score = 100;
@@ -280,21 +227,14 @@ function startSession(){
   idleState.classList.add("hidden");
   activeState.classList.remove("hidden");
 
-  scoreEl.innerText = score;
+  document.getElementById("score").innerText = score + "%";
 }
 
 function bad(){
   if(!active) return;
 
-  let r = reason.value;
-  if(!r) return alert("Pick reason");
-
   score -= 25;
-  scoreEl.innerText = score;
-
-  mistakesToday++;
-  localStorage.setItem("mistakesToday", mistakesToday);
-  updateLock();
+  document.getElementById("score").innerText = score + "%";
 
   if(score < 50) endSession();
 }
@@ -321,7 +261,7 @@ new Chart(document.getElementById("chart"), {
     datasets:[{
       data:last7.map(h=>h.score),
       borderColor:"#7c3aed",
-      tension:0.3
+      tension:0.4
     }]
   },
   options:{
@@ -331,25 +271,9 @@ new Chart(document.getElementById("chart"), {
 });
 
 /* JOURNAL */
-function loadJournal(type="all"){
-  journalList.innerHTML="";
-  history.slice().reverse().forEach(h=>{
-    journalList.innerHTML+=`
-    <div class="entry">
-      ${new Date(h.date).toLocaleDateString()} — ${h.score}%
-    </div>`;
-  });
-}
-loadJournal();
-
-/* INSIGHTS */
-function insights(){
-  if(history.length<3){
-    insightBox.innerText="Not enough data";
-    return;
-  }
-}
-insights();
+journalList.innerHTML = history.slice().reverse().map(h =>
+  `<div>${new Date(h.date).toLocaleDateString()} — ${h.score}%</div>`
+).join("");
 
 </script>
 
