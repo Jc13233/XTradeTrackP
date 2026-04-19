@@ -11,7 +11,6 @@ body {
   font-family: 'Segoe UI', sans-serif;
   background: radial-gradient(circle at top, #0f172a, #020617);
   color: white;
-  overflow-x: hidden;
 }
 
 .container {
@@ -27,10 +26,9 @@ body {
   border-radius: 16px;
   margin-top: 20px;
   backdrop-filter: blur(12px);
-  animation: fadeIn 0.4s ease;
 }
 
-/* 🔥 BUTTONS */
+/* BUTTONS */
 button {
   padding: 12px 20px;
   border-radius: 12px;
@@ -39,49 +37,26 @@ button {
   margin: 6px;
   font-weight: bold;
   color: white;
-  position: relative;
-  overflow: hidden;
-  transition: all 0.2s ease;
+  transition: 0.2s;
 }
 
-.primary {
-  background: linear-gradient(135deg,#4f7cff,#7c3aed);
-  box-shadow: 0 0 12px rgba(124,58,237,0.5);
-}
-.success {
-  background: linear-gradient(135deg,#22c55e,#16a34a);
-  box-shadow: 0 0 12px rgba(34,197,94,0.5);
-}
-.danger {
-  background: linear-gradient(135deg,#ef4444,#dc2626);
-  box-shadow: 0 0 12px rgba(239,68,68,0.5);
-}
+.primary { background: linear-gradient(135deg,#4f7cff,#7c3aed); }
+.success { background: linear-gradient(135deg,#22c55e,#16a34a); }
+.danger { background: linear-gradient(135deg,#ef4444,#dc2626); }
 
-button:hover {
-  transform: translateY(-2px) scale(1.02);
-}
-button:active {
-  transform: scale(0.95);
-}
+button:hover { transform: translateY(-2px); }
 
-/* ripple */
-button::after {
-  content: "";
-  position: absolute;
-  width: 0;
-  height: 0;
-  background: rgba(255,255,255,0.3);
-  border-radius: 50%;
-  transform: translate(-50%, -50%);
-  top: 50%;
-  left: 50%;
-  opacity: 0;
-}
-button:active::after {
-  width: 200px;
-  height: 200px;
-  opacity: 1;
-  transition: 0.4s;
+/* JOURNAL */
+textarea {
+  width: 100%;
+  height: 120px;
+  margin-top: 15px;
+  border-radius: 10px;
+  border: none;
+  padding: 10px;
+  background: #111;
+  color: white;
+  resize: none;
 }
 
 /* CALENDAR */
@@ -90,7 +65,6 @@ button:active::after {
   grid-template-columns: repeat(7, 1fr);
   gap: 8px;
   margin-top: 20px;
-  animation: fadeIn 0.5s ease;
 }
 
 .day {
@@ -98,11 +72,6 @@ button:active::after {
   border-radius: 10px;
   background: #111;
   cursor: pointer;
-  transition: 0.2s;
-}
-
-.day:hover {
-  transform: scale(1.08);
 }
 
 .green { background:#22c55e; }
@@ -110,7 +79,6 @@ button:active::after {
 .red { background:#ef4444; }
 .gray { background:#444; }
 
-/* STATS */
 .stats {
   display: flex;
   justify-content: space-around;
@@ -124,20 +92,13 @@ button:active::after {
   width: 30%;
 }
 
-/* ANIMATIONS */
-@keyframes fadeIn {
-  from {opacity:0; transform: translateY(10px);}
-  to {opacity:1; transform: translateY(0);}
-}
-
-@keyframes pulse {
-  0% { transform: scale(1); }
-  50% { transform: scale(1.08); }
-  100% { transform: scale(1); }
-}
-
-.pulse {
-  animation: pulse 0.4s ease;
+.journal-box {
+  margin-top: 15px;
+  padding: 15px;
+  background: #111;
+  border-radius: 10px;
+  text-align: left;
+  white-space: pre-wrap;
 }
 </style>
 </head>
@@ -171,7 +132,9 @@ button:active::after {
 <button class="success" onclick="followRule()">Executed Discipline</button>
 <button class="danger" onclick="breakRule()">Broke Your System</button>
 
-<br><br>
+<textarea id="journalInput" placeholder="Write your thoughts... Why did you take trades? Emotions? Mistakes?"></textarea>
+
+<br>
 
 <button class="primary" onclick="endSession()">End Session</button>
 
@@ -201,13 +164,12 @@ button:active::after {
 
 <script>
 
-/* DATA */
 let history = JSON.parse(localStorage.getItem("calendarData")) || {};
 let currentDate = new Date();
 
 let trades=0, breaks=0, score=100;
 
-/* NAV TRANSITION */
+/* NAV */
 function showPage(page){
   document.getElementById("sessionPage").style.display =
     page==="session" ? "block" : "none";
@@ -218,40 +180,27 @@ function showPage(page){
   if(page==="calendar") renderCalendar();
 }
 
-/* NUMBER ANIMATION */
-function animateValue(id, start, end) {
-  let duration = 200;
-  let startTime = null;
-
-  function step(timestamp){
-    if(!startTime) startTime = timestamp;
-    let progress = timestamp - startTime;
-    let value = Math.floor(start + (end-start)*(progress/duration));
-    document.getElementById(id).innerText = value;
-    if(progress < duration) requestAnimationFrame(step);
-    else document.getElementById(id).innerText = end;
-  }
-
-  requestAnimationFrame(step);
+function formatDate(date){
+  return date.toISOString().split("T")[0];
 }
 
 /* SESSION */
 function followRule(){
   trades++;
-  animateValue("trades", trades-1, trades);
+  updateSession();
 }
 
 function breakRule(){
   trades++;
   breaks++;
   score -= 25;
+  updateSession();
+}
 
-  animateValue("trades", trades-1, trades);
-  animateValue("breaks", breaks-1, breaks);
-  animateValue("score", score+25, score);
-
-  document.getElementById("score").classList.add("pulse");
-  setTimeout(()=>document.getElementById("score").classList.remove("pulse"),400);
+function updateSession(){
+  document.getElementById("trades").innerText = trades;
+  document.getElementById("breaks").innerText = breaks;
+  document.getElementById("score").innerText = score;
 }
 
 /* END */
@@ -262,18 +211,25 @@ function endSession(){
   else if(score>=75) grade="B";
   else if(score>=50) grade="C";
 
-  let today = new Date().toISOString().split("T")[0];
+  let today = formatDate(new Date());
 
-  history[today] = {score,trades,breaks,grade};
+  let journalText = document.getElementById("journalInput").value;
+
+  history[today] = {
+    score,
+    trades,
+    breaks,
+    grade,
+    journal: journalText
+  };
 
   localStorage.setItem("calendarData", JSON.stringify(history));
 
-  alert("Session saved.");
+  alert("Session + Journal saved.");
 
   trades=0; breaks=0; score=100;
-  document.getElementById("trades").innerText=0;
-  document.getElementById("breaks").innerText=0;
-  document.getElementById("score").innerText=100;
+  document.getElementById("journalInput").value="";
+  updateSession();
 }
 
 /* RESET */
@@ -307,7 +263,7 @@ function renderCalendar(){
   for(let i=1;i<=lastDay.getDate();i++){
 
     let date = new Date(year,month,i);
-    let key = date.toISOString().split("T")[0];
+    let key = formatDate(date);
     let data = history[key];
 
     let div=document.createElement("div");
@@ -326,11 +282,15 @@ function renderCalendar(){
 
     div.onclick=()=>{
       document.getElementById("dayDetail").innerHTML =
-        data ? `<b>Score:</b> ${data.score}%<br>
-                <b>Trades:</b> ${data.trades}<br>
-                <b>Mistakes:</b> ${data.breaks}<br>
-                <b>Grade:</b> ${data.grade}`
-             : "No data";
+        data ? `
+        <b>Score:</b> ${data.score}%<br>
+        <b>Trades:</b> ${data.trades}<br>
+        <b>Mistakes:</b> ${data.breaks}<br>
+        <b>Grade:</b> ${data.grade}<br><br>
+        <b>Journal:</b>
+        <div class="journal-box">${data.journal || "No notes"}</div>
+        `
+        : "No data";
     };
 
     cal.appendChild(div);
@@ -341,6 +301,8 @@ function renderCalendar(){
   document.getElementById("avgScore").innerText =
     total ? Math.round(totalScore/total)+"%" : "0%";
 }
+
+updateSession();
 
 </script>
 
