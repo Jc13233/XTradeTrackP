@@ -14,7 +14,7 @@ body {
 }
 
 .container {
-  max-width: 900px;
+  max-width: 1000px;
   margin: auto;
   padding: 40px 20px;
   text-align: center;
@@ -28,18 +28,16 @@ body {
 }
 
 button {
-  padding: 12px 18px;
+  padding: 10px 16px;
   border-radius: 10px;
   border: none;
   cursor: pointer;
   margin: 5px;
 }
 
-.start { background:#4f7cff; color:white; }
 .good { background:#22c55e; }
 .bad { background:#ef4444; }
 
-/* CALENDAR */
 .calendar {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
@@ -49,14 +47,32 @@ button {
 
 .day {
   padding: 15px;
-  background: #111;
   border-radius: 10px;
+  background: #111;
   cursor: pointer;
+  transition: 0.2s;
+}
+
+.day:hover {
+  transform: scale(1.05);
 }
 
 .green { background:#22c55e; }
 .red { background:#ef4444; }
 .gray { background:#444; }
+
+.stats {
+  display: flex;
+  justify-content: space-around;
+  margin-top: 20px;
+}
+
+.stat {
+  background: rgba(0,0,0,0.4);
+  padding: 15px;
+  border-radius: 12px;
+  width: 30%;
+}
 </style>
 </head>
 
@@ -68,17 +84,17 @@ button {
 
 <!-- NAV -->
 <div>
-<button onclick="showPage('app')">App</button>
+<button onclick="showPage('app')">Session</button>
 <button onclick="showPage('calendar')">Calendar</button>
 </div>
 
-<!-- APP -->
+<!-- SESSION -->
 <div id="appPage" class="card">
 
-<h3>Session</h3>
+<h3>Log Today</h3>
 
-<button class="good" onclick="logDay('good')">Good Session</button>
-<button class="bad" onclick="logDay('bad')">Bad Session</button>
+<button class="good" onclick="logDay('good')">Executed Discipline</button>
+<button class="bad" onclick="logDay('bad')">Broke Your System</button>
 
 <p id="todayStatus"></p>
 
@@ -87,15 +103,29 @@ button {
 <!-- CALENDAR -->
 <div id="calendarPage" class="card" style="display:none;">
 
-<h3>Discipline Calendar</h3>
+<h3 id="monthTitle"></h3>
+
+<button onclick="changeMonth(-1)">⬅</button>
+<button onclick="changeMonth(1)">➡</button>
+
+<div class="stats">
+<div class="stat">Days<br><span id="days"></span></div>
+<div class="stat">Good %<br><span id="goodRate"></span></div>
+<div class="stat">Bad Days<br><span id="badDays"></span></div>
+</div>
 
 <div id="calendar" class="calendar"></div>
+
+<p id="dayDetail"></p>
 
 </div>
 
 </div>
 
 <script>
+
+let history = JSON.parse(localStorage.getItem("calendarData")) || {};
+let currentDate = new Date();
 
 /* NAV */
 function showPage(page){
@@ -104,62 +134,99 @@ function showPage(page){
 
   document.getElementById("calendarPage").style.display =
     page==="calendar" ? "block" : "none";
+
+  if(page==="calendar") renderCalendar();
 }
 
-/* STORAGE */
-let history = JSON.parse(localStorage.getItem("calendarData")) || {};
-
-/* TODAY */
-function getToday(){
-  return new Date().toISOString().split("T")[0];
+/* DATE HELPERS */
+function formatDate(date){
+  return date.toISOString().split("T")[0];
 }
 
 /* LOG DAY */
 function logDay(type){
-  let today = getToday();
+  let today = formatDate(new Date());
   history[today] = type;
   localStorage.setItem("calendarData", JSON.stringify(history));
   updateToday();
-  renderCalendar();
 }
 
-/* UPDATE TODAY TEXT */
+/* TODAY TEXT */
 function updateToday(){
-  let today = getToday();
+  let today = formatDate(new Date());
   let status = history[today];
 
   document.getElementById("todayStatus").innerText =
-    status === "good" ? "Today: Disciplined"
-    : status === "bad" ? "Today: Broke rules"
+    status==="good" ? "Today: Disciplined"
+    : status==="bad" ? "Today: Broke rules"
     : "No session logged today";
+}
+
+/* MONTH NAV */
+function changeMonth(offset){
+  currentDate.setMonth(currentDate.getMonth()+offset);
+  renderCalendar();
 }
 
 /* CALENDAR */
 function renderCalendar(){
+
   let cal = document.getElementById("calendar");
   cal.innerHTML = "";
 
-  for(let i=1;i<=30;i++){
-    let date = new Date();
-    date.setDate(i);
-    let key = date.toISOString().split("T")[0];
+  let year = currentDate.getFullYear();
+  let month = currentDate.getMonth();
+
+  let firstDay = new Date(year, month, 1);
+  let lastDay = new Date(year, month+1, 0);
+
+  document.getElementById("monthTitle").innerText =
+    firstDay.toLocaleString('default', { month: 'long', year: 'numeric' });
+
+  let good=0, bad=0, total=0;
+
+  for(let i=1;i<=lastDay.getDate();i++){
+
+    let date = new Date(year, month, i);
+    let key = formatDate(date);
 
     let div = document.createElement("div");
     div.classList.add("day");
 
-    if(history[key]==="good") div.classList.add("green");
-    else if(history[key]==="bad") div.classList.add("red");
-    else div.classList.add("gray");
+    if(history[key]==="good"){
+      div.classList.add("green");
+      good++;
+    }
+    else if(history[key]==="bad"){
+      div.classList.add("red");
+      bad++;
+    }
+    else{
+      div.classList.add("gray");
+    }
 
+    total++;
     div.innerText = i;
+
+    div.onclick = () => {
+      document.getElementById("dayDetail").innerText =
+        history[key]==="good" ? "Disciplined day"
+        : history[key]==="bad" ? "Broke rules"
+        : "No data";
+    };
 
     cal.appendChild(div);
   }
+
+  /* STATS */
+  document.getElementById("days").innerText = total;
+  document.getElementById("badDays").innerText = bad;
+  document.getElementById("goodRate").innerText =
+    total ? Math.round((good/total)*100)+"%" : "0%";
 }
 
 /* INIT */
 updateToday();
-renderCalendar();
 
 </script>
 
