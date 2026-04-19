@@ -25,7 +25,6 @@ body {
   padding: 25px;
   border-radius: 16px;
   margin-top: 20px;
-  backdrop-filter: blur(12px);
 }
 
 /* BUTTONS */
@@ -45,55 +44,7 @@ button {
 
 button:hover { transform: translateY(-2px); }
 
-/* RULES */
-textarea {
-  width: 100%;
-  border-radius: 10px;
-  border: none;
-  padding: 10px;
-  background: #111;
-  color: white;
-  margin-top: 10px;
-}
-
-.rules-box {
-  background: #111;
-  padding: 15px;
-  border-radius: 10px;
-  text-align: left;
-  white-space: pre-wrap;
-}
-
-/* JOURNAL */
-.journal-box {
-  margin-top: 10px;
-  padding: 15px;
-  background: #111;
-  border-radius: 10px;
-  text-align: left;
-  white-space: pre-wrap;
-}
-
-/* CALENDAR */
-.calendar {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  gap: 8px;
-  margin-top: 20px;
-}
-
-.day {
-  padding: 15px;
-  border-radius: 10px;
-  background: #111;
-  cursor: pointer;
-}
-
-.green { background:#22c55e; }
-.yellow { background:#eab308; }
-.red { background:#ef4444; }
-.gray { background:#444; }
-
+/* STATS */
 .stats {
   display: flex;
   justify-content: space-around;
@@ -106,6 +57,24 @@ textarea {
   border-radius: 12px;
   width: 30%;
 }
+
+/* STREAK */
+.streak {
+  font-size: 20px;
+  margin-top: 10px;
+  color: gold;
+}
+
+/* TEXTAREA */
+textarea {
+  width: 100%;
+  border-radius: 10px;
+  border: none;
+  padding: 10px;
+  background: #111;
+  color: white;
+  margin-top: 10px;
+}
 </style>
 </head>
 
@@ -114,34 +83,11 @@ textarea {
 <div class="container">
 
 <h1>TradeTrack</h1>
+<div class="streak">🔥 Streak: <span id="streak">0</span></div>
 
-<!-- NAV -->
-<div>
-<button class="primary" onclick="showPage('session')">Session</button>
-<button class="primary" onclick="showPage('calendar')">Calendar</button>
-<button class="primary" onclick="showPage('rules')">Rules</button>
-<button class="danger" onclick="resetAll()">Reset</button>
-</div>
-
-<!-- RULES -->
-<div id="rulesPage" class="card" style="display:none;">
-
-<h3>Your Trading Rules</h3>
-
-<textarea id="rulesInput" placeholder="Write your trading rules here... (e.g. Only trade London session, Max 3 trades, 1% risk, no revenge trading)"></textarea>
-
-<button class="primary" onclick="saveRules()">Save Rules</button>
-
-<div class="rules-box" id="rulesDisplay"></div>
-
-</div>
-
-<!-- SESSION -->
-<div id="sessionPage" class="card">
+<div class="card">
 
 <h3>Live Session</h3>
-
-<div class="rules-box" id="rulesPreview"></div>
 
 <div class="stats">
 <div class="stat">Trades<br><span id="trades">0</span></div>
@@ -152,7 +98,7 @@ textarea {
 <br>
 
 <button class="success" onclick="followRule()">Executed Discipline</button>
-<button class="danger" onclick="breakRule()">Broke Your System</button>
+<button class="danger" onclick="breakRule()">Broke Rule</button>
 
 <textarea id="journalInput" placeholder="Journal your thoughts..."></textarea>
 
@@ -162,87 +108,67 @@ textarea {
 
 </div>
 
-<!-- CALENDAR -->
-<div id="calendarPage" class="card" style="display:none;">
-
-<h3 id="monthTitle"></h3>
-
-<button class="primary" onclick="changeMonth(-1)">⬅</button>
-<button class="primary" onclick="changeMonth(1)">➡</button>
-
-<div class="stats">
-<div class="stat">Days<br><span id="days"></span></div>
-<div class="stat">Avg Score<br><span id="avgScore"></span></div>
-<div class="stat">Bad Days<br><span id="badDays"></span></div>
-</div>
-
-<div id="calendar" class="calendar"></div>
-
-<div id="dayDetail" style="margin-top:20px;"></div>
-
-</div>
-
 </div>
 
 <script>
 
+/* STORAGE */
 let history = JSON.parse(localStorage.getItem("calendarData")) || {};
-let rules = localStorage.getItem("rules") || "";
-let currentDate = new Date();
+let streak = parseInt(localStorage.getItem("streak")) || 0;
 
+/* SESSION STATE */
 let trades=0, breaks=0, score=100;
+let sessionActive = true;
 
-/* NAV */
-function showPage(page){
-  document.getElementById("sessionPage").style.display = page==="session"?"block":"none";
-  document.getElementById("calendarPage").style.display = page==="calendar"?"block":"none";
-  document.getElementById("rulesPage").style.display = page==="rules"?"block":"none";
-
-  if(page==="calendar") renderCalendar();
-}
-
-/* RULES */
-function saveRules(){
-  rules = document.getElementById("rulesInput").value;
-  localStorage.setItem("rules", rules);
-  displayRules();
-}
-
-function displayRules(){
-  document.getElementById("rulesDisplay").innerText = rules || "No rules set.";
-  document.getElementById("rulesPreview").innerText = rules || "Set your rules before trading.";
-}
-
-displayRules();
-
-/* SESSION */
-function followRule(){
-  trades++;
-  updateSession();
-}
-
-function breakRule(){
-  trades++;
-  breaks++;
-  score -= 25;
-  updateSession();
-}
-
-function updateSession(){
+/* UPDATE UI */
+function updateUI(){
   document.getElementById("trades").innerText = trades;
   document.getElementById("breaks").innerText = breaks;
   document.getElementById("score").innerText = score;
+  document.getElementById("streak").innerText = streak;
 }
 
-/* END */
+updateUI();
+
+/* RULE ACTIONS */
+function followRule(){
+  if(!sessionActive) return;
+
+  trades++;
+
+  checkLimit();
+  updateUI();
+}
+
+function breakRule(){
+  if(!sessionActive) return;
+
+  trades++;
+  breaks++;
+  score -= 25;
+
+  checkLimit();
+  updateUI();
+}
+
+/* LOCK SYSTEM */
+function checkLimit(){
+  if(trades >= 2){
+    alert("Max trades reached. Session locked.");
+    endSession();
+    sessionActive = false;
+  }
+}
+
+/* END SESSION */
 function endSession(){
+
+  let today = new Date().toISOString().split("T")[0];
 
   let grade="D";
   if(score>=90) grade="A";
   else if(score>=75) grade="B";
   else if(score>=50) grade="C";
-
-  let today = new Date().toISOString().split("T")[0];
 
   let journalText = document.getElementById("journalInput").value;
 
@@ -256,84 +182,27 @@ function endSession(){
 
   localStorage.setItem("calendarData", JSON.stringify(history));
 
+  /* STREAK LOGIC */
+  if(score >= 75){
+    streak++;
+  } else {
+    streak = 0;
+  }
+
+  localStorage.setItem("streak", streak);
+
   alert("Session saved.");
 
-  trades=0; breaks=0; score=100;
+  /* RESET SESSION */
+  trades=0;
+  breaks=0;
+  score=100;
+  sessionActive = true;
+
   document.getElementById("journalInput").value="";
-  updateSession();
+
+  updateUI();
 }
-
-/* RESET */
-function resetAll(){
-  if(confirm("Delete all data?")){
-    localStorage.clear();
-    location.reload();
-  }
-}
-
-/* CALENDAR */
-function changeMonth(offset){
-  currentDate.setMonth(currentDate.getMonth()+offset);
-  renderCalendar();
-}
-
-function renderCalendar(){
-
-  let cal = document.getElementById("calendar");
-  cal.innerHTML="";
-
-  let year = currentDate.getFullYear();
-  let month = currentDate.getMonth();
-  let lastDay = new Date(year, month+1, 0);
-
-  document.getElementById("monthTitle").innerText =
-    new Date(year,month,1).toLocaleString('default',{month:'long',year:'numeric'});
-
-  let total=0,totalScore=0,bad=0;
-
-  for(let i=1;i<=lastDay.getDate();i++){
-
-    let date = new Date(year,month,i);
-    let key = date.toISOString().split("T")[0];
-    let data = history[key];
-
-    let div=document.createElement("div");
-    div.classList.add("day");
-
-    if(data){
-      total++;
-      totalScore+=data.score;
-
-      if(data.score>=75) div.classList.add("green");
-      else if(data.score>=50) div.classList.add("yellow");
-      else {div.classList.add("red"); bad++;}
-    } else div.classList.add("gray");
-
-    div.innerText=i;
-
-    div.onclick=()=>{
-      document.getElementById("dayDetail").innerHTML =
-        data ? `
-        <b>Score:</b> ${data.score}%<br>
-        <b>Trades:</b> ${data.trades}<br>
-        <b>Mistakes:</b> ${data.breaks}<br>
-        <b>Grade:</b> ${data.grade}<br><br>
-        <b>Journal:</b>
-        <div class="journal-box">${data.journal || "No notes"}</div>
-        `
-        : "No data";
-    };
-
-    cal.appendChild(div);
-  }
-
-  document.getElementById("days").innerText=total;
-  document.getElementById("badDays").innerText=bad;
-  document.getElementById("avgScore").innerText =
-    total ? Math.round(totalScore/total)+"%" : "0%";
-}
-
-updateSession();
 
 </script>
 
