@@ -7,184 +7,89 @@
 
 <style>
 body {
-  margin:0;
-  font-family: Inter, system-ui;
-  background:#020617;
-  color:#e2e8f0;
+  margin: 0;
+  font-family: 'Segoe UI', sans-serif;
+  background: radial-gradient(circle at top, #0f172a, #020617);
+  color: white;
 }
 
-/* NAV */
-.nav {
-  display:flex;
-  justify-content:center;
-  gap:20px;
-  padding:20px;
-  border-bottom:1px solid rgba(255,255,255,0.1);
-}
-
-.nav button {
-  background:none;
-  color:#94a3b8;
-  border:none;
-  font-size:16px;
-  cursor:pointer;
-}
-
-.nav button.active {
-  color:#a78bfa;
-}
-
-/* CONTAINER */
 .container {
-  max-width:700px;
-  margin:auto;
-  padding:20px;
+  max-width: 900px;
+  margin: auto;
+  padding: 40px 20px;
+  text-align: center;
 }
 
-/* CARD */
 .card {
-  background:rgba(255,255,255,0.05);
-  border:1px solid rgba(255,255,255,0.08);
-  border-radius:16px;
-  padding:20px;
-  margin-top:20px;
+  background: rgba(255,255,255,0.05);
+  padding: 25px;
+  border-radius: 16px;
+  margin-top: 20px;
 }
 
-/* BUTTONS */
 button {
-  padding:10px 16px;
-  border:none;
-  border-radius:10px;
-  cursor:pointer;
+  padding: 12px 18px;
+  border-radius: 10px;
+  border: none;
+  cursor: pointer;
+  margin: 5px;
 }
 
-.primary { background:#7c3aed; color:white; }
-.good { background:#22c55e; color:white; }
-.bad { background:#ef4444; color:white; }
+.start { background:#4f7cff; color:white; }
+.good { background:#22c55e; }
+.bad { background:#ef4444; }
 
-/* PROGRESS */
-.progress {
-  height:8px;
-  background:#020617;
-  border-radius:10px;
-  margin-top:10px;
+/* CALENDAR */
+.calendar {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 8px;
+  margin-top: 20px;
 }
 
-.bar {
-  height:100%;
-  background:#7c3aed;
+.day {
+  padding: 15px;
+  background: #111;
+  border-radius: 10px;
+  cursor: pointer;
 }
 
-/* HIDDEN */
-.hidden { display:none; }
-
-/* ENTRY */
-.entry {
-  padding:12px;
-  margin-top:10px;
-  background:rgba(255,255,255,0.05);
-  border-radius:10px;
-}
-
-.insight {
-  padding:10px;
-  margin-top:10px;
-  border-left:3px solid #7c3aed;
-  background:rgba(124,58,237,0.1);
-  border-radius:8px;
-}
-
-.small { color:#94a3b8; font-size:13px; }
+.green { background:#22c55e; }
+.red { background:#ef4444; }
+.gray { background:#444; }
 </style>
 </head>
 
 <body>
 
-<!-- NAV -->
-<div class="nav">
-  <button onclick="showTab('dash')" class="active" id="tabDash">Dashboard</button>
-  <button onclick="showTab('journal')" id="tabJournal">Journal</button>
-  <button onclick="showTab('insights')" id="tabInsights">Insights</button>
-</div>
-
 <div class="container">
 
-<!-- DASHBOARD -->
-<div id="dash">
+<h1>TradeTrack</h1>
 
-<div class="card">
-<h2>Session</h2>
-
-<!-- IDLE -->
-<div id="idleState">
-  <p class="small">No active session</p>
-  <button class="primary" onclick="startSession()">Start Session</button>
+<!-- NAV -->
+<div>
+<button onclick="showPage('app')">App</button>
+<button onclick="showPage('calendar')">Calendar</button>
 </div>
 
-<!-- ACTIVE -->
-<div id="activeState" class="hidden">
-  <p>Score: <span id="score">100</span>%</p>
+<!-- APP -->
+<div id="appPage" class="card">
 
-  <select id="reason">
-    <option value="">Why break?</option>
-    <option>FOMO</option>
-    <option>Revenge</option>
-    <option>Boredom</option>
-    <option>Impulse</option>
-  </select>
+<h3>Session</h3>
 
-  <br><br>
+<button class="good" onclick="logDay('good')">Good Session</button>
+<button class="bad" onclick="logDay('bad')">Bad Session</button>
 
-  <!-- ✅ FIXED BUTTONS -->
-  <button class="good" onclick="good()">Disciplined</button>
-  <button class="bad" onclick="bad()">Mistake</button>
-  <button onclick="endSession()">End Session</button>
-</div>
+<p id="todayStatus"></p>
 
 </div>
 
-<div class="card">
-<h3>Stats</h3>
-<p>🔥 Streak: <span id="streak">0</span></p>
-<p>⭐ Level: <span id="level">1</span></p>
-<div class="progress"><div id="xpBar" class="bar"></div></div>
-</div>
+<!-- CALENDAR -->
+<div id="calendarPage" class="card" style="display:none;">
 
-<div class="card">
-<a href="https://buy.stripe.com/aFa8wP0XEfQhfb81F16Na01" target="_blank">
-<button class="primary">Upgrade to Pro (£15/mo)</button>
-</a>
+<h3>Discipline Calendar</h3>
 
-<p id="usage"></p>
-</div>
-
-</div>
-
-<!-- JOURNAL -->
-<div id="journal" class="hidden">
-<div class="card">
-<h2>Journal</h2>
-
-<button onclick="filter('all')">All</button>
-<button onclick="filter('good')">Good</button>
-<button onclick="filter('bad')">Bad</button>
-
-<div id="journalList"></div>
-</div>
-</div>
-
-<!-- INSIGHTS -->
-<div id="insights" class="hidden">
-
-<div class="card">
-<h2>Insights</h2>
-<div id="insightBox"></div>
-</div>
-
-<div class="card">
-<h3>Weekly</h3>
-<p id="weekly"></p>
-</div>
+<div id="calendar" class="calendar"></div>
 
 </div>
 
@@ -192,172 +97,69 @@ button {
 
 <script>
 
-/* TAB */
-function showTab(tab){
-  ["dash","journal","insights"].forEach(id=>{
-    document.getElementById(id).classList.add("hidden");
-    document.getElementById("tab"+id.charAt(0).toUpperCase()+id.slice(1)).classList.remove("active");
-  });
-  document.getElementById(tab).classList.remove("hidden");
-  document.getElementById("tab"+tab.charAt(0).toUpperCase()+tab.slice(1)).classList.add("active");
+/* NAV */
+function showPage(page){
+  document.getElementById("appPage").style.display =
+    page==="app" ? "block" : "none";
+
+  document.getElementById("calendarPage").style.display =
+    page==="calendar" ? "block" : "none";
 }
 
-/* DATA */
-let history = JSON.parse(localStorage.getItem("history")||"[]");
-let streak = +localStorage.getItem("streak")||0;
-let xp = +localStorage.getItem("xp")||0;
-let level = +localStorage.getItem("level")||1;
-let freeUsed = +localStorage.getItem("freeUsed")||0;
+/* STORAGE */
+let history = JSON.parse(localStorage.getItem("calendarData")) || {};
 
-/* ELEMENTS */
-const streakEl = document.getElementById("streak");
-const levelEl = document.getElementById("level");
-const xpBar = document.getElementById("xpBar");
-const usage = document.getElementById("usage");
-const scoreEl = document.getElementById("score");
-const reason = document.getElementById("reason");
+/* TODAY */
+function getToday(){
+  return new Date().toISOString().split("T")[0];
+}
+
+/* LOG DAY */
+function logDay(type){
+  let today = getToday();
+  history[today] = type;
+  localStorage.setItem("calendarData", JSON.stringify(history));
+  updateToday();
+  renderCalendar();
+}
+
+/* UPDATE TODAY TEXT */
+function updateToday(){
+  let today = getToday();
+  let status = history[today];
+
+  document.getElementById("todayStatus").innerText =
+    status === "good" ? "Today: Disciplined"
+    : status === "bad" ? "Today: Broke rules"
+    : "No session logged today";
+}
+
+/* CALENDAR */
+function renderCalendar(){
+  let cal = document.getElementById("calendar");
+  cal.innerHTML = "";
+
+  for(let i=1;i<=30;i++){
+    let date = new Date();
+    date.setDate(i);
+    let key = date.toISOString().split("T")[0];
+
+    let div = document.createElement("div");
+    div.classList.add("day");
+
+    if(history[key]==="good") div.classList.add("green");
+    else if(history[key]==="bad") div.classList.add("red");
+    else div.classList.add("gray");
+
+    div.innerText = i;
+
+    cal.appendChild(div);
+  }
+}
 
 /* INIT */
-streakEl.innerText = streak;
-levelEl.innerText = level;
-xpBar.style.width = (xp/(level*100))*100+"%";
-usage.innerText = "Free sessions left: "+(5-freeUsed);
-
-/* SESSION */
-let score = 100;
-let reasons = [];
-let active = false;
-
-/* START */
-function startSession(){
-
-  if(freeUsed>=5){
-    alert("Upgrade required");
-    return;
-  }
-
-  score = 100;
-  reasons = [];
-  active = true;
-
-  document.getElementById("idleState").classList.add("hidden");
-  document.getElementById("activeState").classList.remove("hidden");
-
-  scoreEl.innerText = score;
-}
-
-/* ✅ NEW POSITIVE ACTION */
-function good(){
-  if(!active) return;
-
-  score += 2;
-  if(score > 100) score = 100;
-
-  scoreEl.innerText = score;
-}
-
-/* MISTAKE */
-function bad(){
-  if(!active) return;
-
-  let r = reason.value;
-  if(!r) return alert("Pick reason");
-
-  score -= 25;
-  reasons.push(r);
-  scoreEl.innerText = score;
-
-  if(score < 50){
-    alert("Hard stop triggered");
-    endSession();
-  }
-}
-
-/* END */
-function endSession(){
-  if(!active) return;
-
-  active = false;
-
-  freeUsed++;
-  localStorage.setItem("freeUsed", freeUsed);
-
-  if(score>=75) streak++; else streak=0;
-  localStorage.setItem("streak", streak);
-
-  xp += score;
-  if(xp >= level*100){
-    xp -= level*100;
-    level++;
-  }
-
-  localStorage.setItem("xp", xp);
-  localStorage.setItem("level", level);
-
-  history.push({ score, reasons, date:Date.now() });
-  localStorage.setItem("history", JSON.stringify(history));
-
-  location.reload();
-}
-
-/* JOURNAL */
-function loadJournal(type="all"){
-  const journalList = document.getElementById("journalList");
-  journalList.innerHTML = "";
-
-  history.slice().reverse().filter(h=>{
-    if(type==="good") return h.score>=75;
-    if(type==="bad") return h.score<75;
-    return true;
-  }).forEach(h=>{
-    journalList.innerHTML += `
-      <div class="entry">
-        ${new Date(h.date).toLocaleDateString()} — ${h.score}%<br>
-        <span class="small">${h.reasons.join(", ")}</span>
-      </div>
-    `;
-  });
-}
-
-function filter(t){ loadJournal(t); }
-loadJournal();
-
-/* INSIGHTS */
-function insights(){
-  if(history.length<3){
-    document.getElementById("insightBox").innerText="Not enough data";
-    return;
-  }
-
-  let count={};
-  history.forEach(h=>{
-    h.reasons.forEach(r=>{
-      count[r]=(count[r]||0)+1;
-    });
-  });
-
-  let top = Object.keys(count).sort((a,b)=>count[b]-count[a])[0];
-
-  document.getElementById("insightBox").innerHTML =
-    `<div class="insight">Main issue: ${top}</div>`;
-}
-insights();
-
-/* WEEKLY */
-function weekly(){
-  let now=Date.now();
-  let w=7*24*60*60*1000;
-
-  let week = history.filter(h=>h.date>now-w);
-
-  let avg = week.length
-    ? Math.round(week.reduce((a,b)=>a+b.score,0)/week.length)
-    : 0;
-
-  document.getElementById("weekly").innerText =
-    "This week avg: "+avg+"%";
-}
-weekly();
+updateToday();
+renderCalendar();
 
 </script>
 
