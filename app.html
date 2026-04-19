@@ -11,6 +11,7 @@ body {
   font-family: 'Segoe UI', sans-serif;
   background: radial-gradient(circle at top, #0f172a, #020617);
   color: white;
+  overflow-x: hidden;
 }
 
 .container {
@@ -25,24 +26,71 @@ body {
   padding: 25px;
   border-radius: 16px;
   margin-top: 20px;
+  backdrop-filter: blur(12px);
+  animation: fadeIn 0.4s ease;
 }
 
+/* 🔥 BUTTONS */
 button {
-  padding: 10px 16px;
-  border-radius: 10px;
+  padding: 12px 20px;
+  border-radius: 12px;
   border: none;
   cursor: pointer;
-  margin: 5px;
+  margin: 6px;
+  font-weight: bold;
+  color: white;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.2s ease;
 }
 
-.good { background:#22c55e; }
-.bad { background:#ef4444; }
+.primary {
+  background: linear-gradient(135deg,#4f7cff,#7c3aed);
+  box-shadow: 0 0 12px rgba(124,58,237,0.5);
+}
+.success {
+  background: linear-gradient(135deg,#22c55e,#16a34a);
+  box-shadow: 0 0 12px rgba(34,197,94,0.5);
+}
+.danger {
+  background: linear-gradient(135deg,#ef4444,#dc2626);
+  box-shadow: 0 0 12px rgba(239,68,68,0.5);
+}
 
+button:hover {
+  transform: translateY(-2px) scale(1.02);
+}
+button:active {
+  transform: scale(0.95);
+}
+
+/* ripple */
+button::after {
+  content: "";
+  position: absolute;
+  width: 0;
+  height: 0;
+  background: rgba(255,255,255,0.3);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  top: 50%;
+  left: 50%;
+  opacity: 0;
+}
+button:active::after {
+  width: 200px;
+  height: 200px;
+  opacity: 1;
+  transition: 0.4s;
+}
+
+/* CALENDAR */
 .calendar {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
   gap: 8px;
   margin-top: 20px;
+  animation: fadeIn 0.5s ease;
 }
 
 .day {
@@ -50,6 +98,11 @@ button {
   border-radius: 10px;
   background: #111;
   cursor: pointer;
+  transition: 0.2s;
+}
+
+.day:hover {
+  transform: scale(1.08);
 }
 
 .green { background:#22c55e; }
@@ -57,6 +110,7 @@ button {
 .red { background:#ef4444; }
 .gray { background:#444; }
 
+/* STATS */
 .stats {
   display: flex;
   justify-content: space-around;
@@ -69,6 +123,22 @@ button {
   border-radius: 12px;
   width: 30%;
 }
+
+/* ANIMATIONS */
+@keyframes fadeIn {
+  from {opacity:0; transform: translateY(10px);}
+  to {opacity:1; transform: translateY(0);}
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.08); }
+  100% { transform: scale(1); }
+}
+
+.pulse {
+  animation: pulse 0.4s ease;
+}
 </style>
 </head>
 
@@ -80,9 +150,9 @@ button {
 
 <!-- NAV -->
 <div>
-<button onclick="showPage('session')">Session</button>
-<button onclick="showPage('calendar')">Calendar</button>
-<button onclick="resetAll()">Reset Data</button>
+<button class="primary" onclick="showPage('session')">Session</button>
+<button class="primary" onclick="showPage('calendar')">Calendar</button>
+<button class="danger" onclick="resetAll()">Reset</button>
 </div>
 
 <!-- SESSION -->
@@ -98,12 +168,12 @@ button {
 
 <br>
 
-<button class="good" onclick="followRule()">Executed Discipline</button>
-<button class="bad" onclick="breakRule()">Broke Your System</button>
+<button class="success" onclick="followRule()">Executed Discipline</button>
+<button class="danger" onclick="breakRule()">Broke Your System</button>
 
 <br><br>
 
-<button onclick="endSession()">End Session</button>
+<button class="primary" onclick="endSession()">End Session</button>
 
 </div>
 
@@ -112,8 +182,8 @@ button {
 
 <h3 id="monthTitle"></h3>
 
-<button onclick="changeMonth(-1)">⬅</button>
-<button onclick="changeMonth(1)">➡</button>
+<button class="primary" onclick="changeMonth(-1)">⬅</button>
+<button class="primary" onclick="changeMonth(1)">➡</button>
 
 <div class="stats">
 <div class="stat">Days<br><span id="days"></span></div>
@@ -131,17 +201,13 @@ button {
 
 <script>
 
-/* RESET ALL DATA ON FIRST LOAD */
-localStorage.removeItem("calendarData");
-
 /* DATA */
 let history = JSON.parse(localStorage.getItem("calendarData")) || {};
 let currentDate = new Date();
 
-/* SESSION STATE */
 let trades=0, breaks=0, score=100;
 
-/* NAV */
+/* NAV TRANSITION */
 function showPage(page){
   document.getElementById("sessionPage").style.display =
     page==="session" ? "block" : "none";
@@ -152,31 +218,43 @@ function showPage(page){
   if(page==="calendar") renderCalendar();
 }
 
-/* HELPERS */
-function formatDate(date){
-  return date.toISOString().split("T")[0];
+/* NUMBER ANIMATION */
+function animateValue(id, start, end) {
+  let duration = 200;
+  let startTime = null;
+
+  function step(timestamp){
+    if(!startTime) startTime = timestamp;
+    let progress = timestamp - startTime;
+    let value = Math.floor(start + (end-start)*(progress/duration));
+    document.getElementById(id).innerText = value;
+    if(progress < duration) requestAnimationFrame(step);
+    else document.getElementById(id).innerText = end;
+  }
+
+  requestAnimationFrame(step);
 }
 
-/* SESSION ACTIONS */
+/* SESSION */
 function followRule(){
   trades++;
-  updateSession();
+  animateValue("trades", trades-1, trades);
 }
 
 function breakRule(){
   trades++;
   breaks++;
   score -= 25;
-  updateSession();
+
+  animateValue("trades", trades-1, trades);
+  animateValue("breaks", breaks-1, breaks);
+  animateValue("score", score+25, score);
+
+  document.getElementById("score").classList.add("pulse");
+  setTimeout(()=>document.getElementById("score").classList.remove("pulse"),400);
 }
 
-function updateSession(){
-  document.getElementById("trades").innerText = trades;
-  document.getElementById("breaks").innerText = breaks;
-  document.getElementById("score").innerText = score;
-}
-
-/* END SESSION */
+/* END */
 function endSession(){
 
   let grade="D";
@@ -184,28 +262,23 @@ function endSession(){
   else if(score>=75) grade="B";
   else if(score>=50) grade="C";
 
-  let today = formatDate(new Date());
+  let today = new Date().toISOString().split("T")[0];
 
-  history[today] = {
-    score: score,
-    trades: trades,
-    breaks: breaks,
-    grade: grade
-  };
+  history[today] = {score,trades,breaks,grade};
 
   localStorage.setItem("calendarData", JSON.stringify(history));
 
   alert("Session saved.");
 
-  trades=0;
-  breaks=0;
-  score=100;
-  updateSession();
+  trades=0; breaks=0; score=100;
+  document.getElementById("trades").innerText=0;
+  document.getElementById("breaks").innerText=0;
+  document.getElementById("score").innerText=100;
 }
 
-/* RESET BUTTON */
+/* RESET */
 function resetAll(){
-  if(confirm("This will delete ALL data. Continue?")){
+  if(confirm("Delete all data?")){
     localStorage.clear();
     location.reload();
   }
@@ -224,51 +297,40 @@ function renderCalendar(){
 
   let year = currentDate.getFullYear();
   let month = currentDate.getMonth();
-
-  let firstDay = new Date(year, month, 1);
   let lastDay = new Date(year, month+1, 0);
 
   document.getElementById("monthTitle").innerText =
-    firstDay.toLocaleString('default',{month:'long',year:'numeric'});
+    new Date(year,month,1).toLocaleString('default',{month:'long',year:'numeric'});
 
-  let total=0, totalScore=0, bad=0;
+  let total=0,totalScore=0,bad=0;
 
   for(let i=1;i<=lastDay.getDate();i++){
 
     let date = new Date(year,month,i);
-    let key = formatDate(date);
-
-    let div = document.createElement("div");
-    div.classList.add("day");
-
+    let key = date.toISOString().split("T")[0];
     let data = history[key];
+
+    let div=document.createElement("div");
+    div.classList.add("day");
 
     if(data){
       total++;
-      totalScore += data.score;
+      totalScore+=data.score;
 
       if(data.score>=75) div.classList.add("green");
       else if(data.score>=50) div.classList.add("yellow");
-      else {
-        div.classList.add("red");
-        bad++;
-      }
-    } else {
-      div.classList.add("gray");
-    }
+      else {div.classList.add("red"); bad++;}
+    } else div.classList.add("gray");
 
     div.innerText=i;
 
     div.onclick=()=>{
-      if(data){
-        document.getElementById("dayDetail").innerHTML =
-          `<b>Score:</b> ${data.score}%<br>
-           <b>Trades:</b> ${data.trades}<br>
-           <b>Mistakes:</b> ${data.breaks}<br>
-           <b>Grade:</b> ${data.grade}`;
-      } else {
-        document.getElementById("dayDetail").innerText="No data";
-      }
+      document.getElementById("dayDetail").innerHTML =
+        data ? `<b>Score:</b> ${data.score}%<br>
+                <b>Trades:</b> ${data.trades}<br>
+                <b>Mistakes:</b> ${data.breaks}<br>
+                <b>Grade:</b> ${data.grade}`
+             : "No data";
     };
 
     cal.appendChild(div);
@@ -279,9 +341,6 @@ function renderCalendar(){
   document.getElementById("avgScore").innerText =
     total ? Math.round(totalScore/total)+"%" : "0%";
 }
-
-/* INIT */
-updateSession();
 
 </script>
 
