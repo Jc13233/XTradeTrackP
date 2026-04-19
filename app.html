@@ -37,7 +37,6 @@ button {
   margin: 6px;
   font-weight: bold;
   color: white;
-  transition: 0.2s;
 }
 
 .primary { background: linear-gradient(135deg,#4f7cff,#7c3aed); }
@@ -46,17 +45,33 @@ button {
 
 button:hover { transform: translateY(-2px); }
 
-/* JOURNAL */
+/* RULES */
 textarea {
   width: 100%;
-  height: 120px;
-  margin-top: 15px;
   border-radius: 10px;
   border: none;
   padding: 10px;
   background: #111;
   color: white;
-  resize: none;
+  margin-top: 10px;
+}
+
+.rules-box {
+  background: #111;
+  padding: 15px;
+  border-radius: 10px;
+  text-align: left;
+  white-space: pre-wrap;
+}
+
+/* JOURNAL */
+.journal-box {
+  margin-top: 10px;
+  padding: 15px;
+  background: #111;
+  border-radius: 10px;
+  text-align: left;
+  white-space: pre-wrap;
 }
 
 /* CALENDAR */
@@ -91,15 +106,6 @@ textarea {
   border-radius: 12px;
   width: 30%;
 }
-
-.journal-box {
-  margin-top: 15px;
-  padding: 15px;
-  background: #111;
-  border-radius: 10px;
-  text-align: left;
-  white-space: pre-wrap;
-}
 </style>
 </head>
 
@@ -113,13 +119,29 @@ textarea {
 <div>
 <button class="primary" onclick="showPage('session')">Session</button>
 <button class="primary" onclick="showPage('calendar')">Calendar</button>
+<button class="primary" onclick="showPage('rules')">Rules</button>
 <button class="danger" onclick="resetAll()">Reset</button>
+</div>
+
+<!-- RULES -->
+<div id="rulesPage" class="card" style="display:none;">
+
+<h3>Your Trading Rules</h3>
+
+<textarea id="rulesInput" placeholder="Write your trading rules here... (e.g. Only trade London session, Max 3 trades, 1% risk, no revenge trading)"></textarea>
+
+<button class="primary" onclick="saveRules()">Save Rules</button>
+
+<div class="rules-box" id="rulesDisplay"></div>
+
 </div>
 
 <!-- SESSION -->
 <div id="sessionPage" class="card">
 
 <h3>Live Session</h3>
+
+<div class="rules-box" id="rulesPreview"></div>
 
 <div class="stats">
 <div class="stat">Trades<br><span id="trades">0</span></div>
@@ -132,7 +154,7 @@ textarea {
 <button class="success" onclick="followRule()">Executed Discipline</button>
 <button class="danger" onclick="breakRule()">Broke Your System</button>
 
-<textarea id="journalInput" placeholder="Write your thoughts... Why did you take trades? Emotions? Mistakes?"></textarea>
+<textarea id="journalInput" placeholder="Journal your thoughts..."></textarea>
 
 <br>
 
@@ -165,24 +187,33 @@ textarea {
 <script>
 
 let history = JSON.parse(localStorage.getItem("calendarData")) || {};
+let rules = localStorage.getItem("rules") || "";
 let currentDate = new Date();
 
 let trades=0, breaks=0, score=100;
 
 /* NAV */
 function showPage(page){
-  document.getElementById("sessionPage").style.display =
-    page==="session" ? "block" : "none";
-
-  document.getElementById("calendarPage").style.display =
-    page==="calendar" ? "block" : "none";
+  document.getElementById("sessionPage").style.display = page==="session"?"block":"none";
+  document.getElementById("calendarPage").style.display = page==="calendar"?"block":"none";
+  document.getElementById("rulesPage").style.display = page==="rules"?"block":"none";
 
   if(page==="calendar") renderCalendar();
 }
 
-function formatDate(date){
-  return date.toISOString().split("T")[0];
+/* RULES */
+function saveRules(){
+  rules = document.getElementById("rulesInput").value;
+  localStorage.setItem("rules", rules);
+  displayRules();
 }
+
+function displayRules(){
+  document.getElementById("rulesDisplay").innerText = rules || "No rules set.";
+  document.getElementById("rulesPreview").innerText = rules || "Set your rules before trading.";
+}
+
+displayRules();
 
 /* SESSION */
 function followRule(){
@@ -211,7 +242,7 @@ function endSession(){
   else if(score>=75) grade="B";
   else if(score>=50) grade="C";
 
-  let today = formatDate(new Date());
+  let today = new Date().toISOString().split("T")[0];
 
   let journalText = document.getElementById("journalInput").value;
 
@@ -225,7 +256,7 @@ function endSession(){
 
   localStorage.setItem("calendarData", JSON.stringify(history));
 
-  alert("Session + Journal saved.");
+  alert("Session saved.");
 
   trades=0; breaks=0; score=100;
   document.getElementById("journalInput").value="";
@@ -263,7 +294,7 @@ function renderCalendar(){
   for(let i=1;i<=lastDay.getDate();i++){
 
     let date = new Date(year,month,i);
-    let key = formatDate(date);
+    let key = date.toISOString().split("T")[0];
     let data = history[key];
 
     let div=document.createElement("div");
