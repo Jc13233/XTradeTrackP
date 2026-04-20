@@ -373,7 +373,11 @@ function renderCalendar(){
 
   for(let i=1;i<=lastDay.getDate();i++){
     let date=new Date(year,month,i);
-    let key=date.toISOString().split("T")[0];
+
+    let key = date.getFullYear() + "-" +
+              String(date.getMonth()+1).padStart(2,"0") + "-" +
+              String(date.getDate()).padStart(2,"0");
+
     let data=history[key];
 
     let div=document.createElement("div");
