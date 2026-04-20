@@ -180,7 +180,6 @@ textarea {
 <h1>TradeTrack</h1>
 <div class="streak">🔥 Streak: <span id="streak">0</span></div>
 
-<!-- NAV -->
 <div>
 <button class="primary" onclick="showPage('session')">Session</button>
 <button class="primary" onclick="showPage('calendar')">Calendar</button>
@@ -188,7 +187,6 @@ textarea {
 <button class="danger" onclick="resetAll()">Reset</button>
 </div>
 
-<!-- RULES -->
 <div id="rulesPage" class="card fade" style="display:none;">
 <h3>Your Trading Rules</h3>
 <textarea id="rulesInput"></textarea>
@@ -196,7 +194,6 @@ textarea {
 <div class="rules-box" id="rulesDisplay"></div>
 </div>
 
-<!-- SESSION -->
 <div id="sessionPage" class="card fade">
 
 <div class="rules-box" id="rulesPreview"></div>
@@ -218,7 +215,6 @@ textarea {
 
 </div>
 
-<!-- CALENDAR -->
 <div id="calendarPage" class="card fade" style="display:none;">
 <h3 id="monthTitle"></h3>
 <button class="primary" onclick="changeMonth(-1)">⬅</button>
@@ -230,7 +226,6 @@ textarea {
 
 </div>
 
-<!-- MODAL -->
 <div id="modal" class="modal">
   <div class="modal-content">
     <h3>Why did you break your rule?</h3>
@@ -244,8 +239,6 @@ textarea {
 </div>
 
 <script>
-
-/* JS — EXACT SAME (unchanged from V29) */
 
 let history = JSON.parse(localStorage.getItem("calendarData")) || {};
 let rules = localStorage.getItem("rules") || "";
@@ -323,7 +316,10 @@ function endSession(){
     return;
   }
 
-  let today = new Date().toISOString().split("T")[0];
+  let now = new Date();
+  let today = now.getFullYear() + "-" +
+              String(now.getMonth()+1).padStart(2,"0") + "-" +
+              String(now.getDate()).padStart(2,"0");
 
   history[today] = {
     score,trades,breaks,
