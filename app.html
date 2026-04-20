@@ -136,14 +136,12 @@ textarea {
   color: gold;
 }
 
-/* LOCK MESSAGE */
 .lock-message {
   margin-top: 10px;
   color: #facc15;
   font-weight: bold;
 }
 
-/* MODAL */
 .modal {
   position: fixed;
   top:0; left:0;
@@ -185,6 +183,12 @@ textarea {
 <button class="primary" onclick="showPage('calendar')">Calendar</button>
 <button class="primary" onclick="showPage('rules')">Rules</button>
 <button class="danger" onclick="resetAll()">Reset</button>
+</div>
+
+<!-- ✅ NEW: MOST COMMON MISTAKE -->
+<div class="card">
+  <h3>Most Common Mistake</h3>
+  <p id="topMistake">No data yet</p>
 </div>
 
 <div id="rulesPage" class="card fade" style="display:none;">
@@ -248,6 +252,21 @@ let currentDate = new Date();
 let trades=0, breaks=0, good=0, score=0;
 let mistakes=[];
 let sessionLocked=false;
+
+/* ✅ NEW: CALCULATE MOST COMMON MISTAKE */
+function updateTopMistake(){
+  let counts = {};
+
+  Object.values(history).forEach(day=>{
+    (day.mistakes || []).forEach(m=>{
+      counts[m] = (counts[m] || 0) + 1;
+    });
+  });
+
+  let top = Object.keys(counts).reduce((a,b)=>counts[a]>counts[b]?a:b, null);
+
+  document.getElementById("topMistake").innerText = top || "No data yet";
+}
 
 function showPage(page){
   document.getElementById("sessionPage").style.display = page==="session"?"block":"none";
@@ -334,6 +353,8 @@ function endSession(){
 
   localStorage.setItem("streak", streak);
 
+  updateTopMistake(); // ✅ update after session
+
   alert("Session saved");
 
   trades=0; breaks=0; good=0; score=0;
@@ -404,6 +425,8 @@ function renderCalendar(){
 
     cal.appendChild(div);
   }
+
+  updateTopMistake(); // ✅ update when opening calendar
 }
 
 function updateUI(){
@@ -414,6 +437,7 @@ function updateUI(){
 }
 
 updateUI();
+updateTopMistake(); // ✅ load on start
 
 </script>
 
